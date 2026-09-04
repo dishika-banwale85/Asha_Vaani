@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Asha Vani</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0284c7">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  
+  <style>
+    * { font-family: system-ui, -apple-system, sans-serif; }
+    body { background-color: #f8fafc; }
+    
+    /* Markdown Styling inside Chat Bubbles */
+    .prose p { margin-bottom: 0.5rem; }
+    .prose p:last-child { margin-bottom: 0; }
+    .prose strong { font-weight: 700; color: #0f172a; }
+    .prose ul { list-style-type: disc; padding-left: 1.25rem; margin-bottom: 0.5rem; }
+    .prose li { margin-bottom: 0.25rem; }
+    
+    /* Custom Scrollbar for Chat */
+    #chat-history::-webkit-scrollbar { width: 6px; }
+    #chat-history::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+    
+    textarea { resize: none; overflow: hidden; }
+  </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+  <header class="bg-sky-700 text-white p-4 shadow-md flex justify-between items-center z-50">
+    <div>
+      <h1 class="text-lg font-bold tracking-wide">आशा वाणी</h1>
+      <p class="text-xs text-sky-200">Decision Support System</p>
+    </div>
+    <div id="status-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500 text-white flex items-center gap-2 shadow-inner">
+      <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+      <span id="status-text">Online</span>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-2xl w-full mx-auto flex flex-col p-4 overflow-hidden relative">
+    
+    <div id="chat-history" class="flex-1 overflow-y-auto bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col gap-4 mb-4">
+      <div class="self-start bg-sky-50 text-slate-800 p-3 rounded-2xl rounded-tl-sm text-sm max-w-[85%] shadow-sm border border-sky-100 prose">
+        <p>Namaste! Aaj malaria ya ASHA duties ke baare mein kya janna chahti hain?</p>
+      </div>
+    </div>
+
+    <div class="bg-white p-2 rounded-2xl shadow-md border border-slate-200 flex items-end gap-2 transition-all focus-within:ring-2 focus-within:ring-sky-500">
+      <button id="mic-btn" class="p-3 bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors flex-shrink-0 mb-1">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+      </button>
+      
+      <textarea id="chat-input" rows="1" class="flex-1 max-h-32 p-2 bg-transparent outline-none text-sm text-slate-700 placeholder-slate-400" placeholder="Type a message..."></textarea>
+      
+      <button id="send-btn" class="p-3 bg-sky-600 hover:bg-sky-700 text-white rounded-full transition-colors flex-shrink-0 mb-1">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+      </button>
+    </div>
+  </main>
+
+  <script src="js/db.js"></script>
+  <script src="js/protocol_engine.js"></script>
+  <script>
+    // --- UI Logic & Auto-expanding Textarea ---
+    const chatInput = document.getElementById('chat-input');
+    chatInput.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = (this.scrollHeight) + 'px';
+    });
+
+    // --- Online Chat Logic ---
+    const sendBtn = document.getElementById('send-btn');
+    const chatHistory = document.getElementById('chat-history');
+    let conversationMemory = []; 
+
+    function appendMessage(text, sender) {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `p-3 rounded-2xl text-sm max-w-[85%] shadow-sm prose ${
+        sender === 'user' 
+          ? 'self-end bg-sky-600 text-white rounded-tr-sm' 
+          : 'self-start bg-sky-50 text-slate-800 rounded-tl-sm border border-sky-100'
+      }`;
+      
+      // Magic: Convert Markdown to HTML securely!
+      if (sender === 'user') {
+        msgDiv.textContent = text; // Keep user text raw
+      } else {
+        msgDiv.innerHTML = marked.parse(text); 
+        // Fix Tailwind typography color inheritance for bot
+        const strongs = msgDiv.querySelectorAll('strong');
+        strongs.forEach(s => s.style.color = '#0284c7');
+      }
+      
+      chatHistory.appendChild(msgDiv);
+      chatHistory.scrollTop = chatHistory.scrollHeight;
+    }
+
+    sendBtn.addEventListener('click', async () => {
+      const userText = chatInput.value.trim();
+      if (!userText) return;
+
+      appendMessage(userText, 'user');
+      chatInput.value = '';
+      chatInput.style.height = 'auto'; // reset height
+
+      const loader = document.createElement('div');
+      loader.id = 'typing-indicator';
+      loader.className = 'self-start bg-slate-100 text-slate-500 p-3 rounded-2xl rounded-tl-sm text-sm max-w-[85%] italic flex gap-1 items-center';
+      loader.innerHTML = '<span class="animate-bounce">●</span><span class="animate-bounce" style="animation-delay: 0.2s">●</span><span class="animate-bounce" style="animation-delay: 0.4s">●</span>';
+      chatHistory.appendChild(loader);
+      chatHistory.scrollTop = chatHistory.scrollHeight;
+
+      try {
+        const response = await fetch('http://127.0.0.1:8000/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: userText, history: conversationMemory })
+        });
+
+        const data = await response.json();
+        document.getElementById('typing-indicator').remove();
+        appendMessage(data.response, 'bot');
+        
+        conversationMemory.push({ sender: 'user', text: userText });
+        conversationMemory.push({ sender: 'bot', text: data.response });
+        if (conversationMemory.length > 6) conversationMemory = conversationMemory.slice(-6);
+        
+      } catch (error) {
+        if(document.getElementById('typing-indicator')) document.getElementById('typing-indicator').remove();
+        appendMessage('Connection error. Please check your backend server.', 'bot');
+      }
+    });
+
+    chatInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendBtn.click();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+{
+  "name": "Asha Vani - Healthcare Decision Support",
+  "short_name": "Asha Vani",
+  "description": "Offline-first NVBDCP malaria diagnostic and decision support assistant for ASHA workers.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0284c7",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
