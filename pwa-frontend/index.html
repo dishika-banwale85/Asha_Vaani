@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Asha Vani</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0284c7">
+  <meta name="theme-color" content="#0369a1">
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -13,84 +13,342 @@
   <style>
     * { font-family: system-ui, -apple-system, sans-serif; }
     body { background-color: #f8fafc; }
-    
-    /* Markdown Styling inside Chat Bubbles */
     .prose p { margin-bottom: 0.5rem; }
     .prose p:last-child { margin-bottom: 0; }
     .prose strong { font-weight: 700; color: #0f172a; }
     .prose ul { list-style-type: disc; padding-left: 1.25rem; margin-bottom: 0.5rem; }
-    .prose li { margin-bottom: 0.25rem; }
-    
-    /* Custom Scrollbar for Chat */
     #chat-history::-webkit-scrollbar { width: 6px; }
     #chat-history::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
-    
     textarea { resize: none; overflow: hidden; }
   </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden">
+<div id="auth-screen" class="fixed inset-0 z-[100] bg-slate-100 flex items-center justify-center p-4">
+    <div class="bg-white max-w-sm w-full rounded-2xl shadow-xl border border-slate-200 p-6">
+      <div class="text-center mb-6">
+        <h1 class="text-2xl font-bold text-sky-700 tracking-wide mb-1">आशा वाणी</h1>
+        <p id="auth-subtitle" class="text-sm text-slate-500">Please login to continue</p>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">ASHA ID / Username</label>
+          <input type="text" id="auth-username" class="w-full p-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">Password</label>
+          <input type="password" id="auth-password" class="w-full p-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none">
+        </div>
+        
+        <p id="auth-error" class="text-red-500 text-xs hidden text-center font-semibold"></p>
+
+        <button id="auth-action-btn" class="w-full p-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-lg transition-colors mt-2">
+          Login
+        </button>
+      </div>
+
+      <div class="mt-4 text-center">
+        <p class="text-xs text-slate-500">
+          <span id="auth-toggle-text">Don't have an account?</span> 
+          <button id="auth-toggle-btn" class="text-sky-600 font-bold hover:underline">Sign Up</button>
+        </p>
+      </div>
+    </div>
+  </div>
 
   <header class="bg-sky-700 text-white p-4 shadow-md flex justify-between items-center z-50">
     <div>
       <h1 class="text-lg font-bold tracking-wide">आशा वाणी</h1>
-      <p class="text-xs text-sky-200">Decision Support System</p>
+      <p id="user-profile-name" class="text-xs text-sky-200">Decision Support System</p> 
     </div>
-    <div id="status-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500 text-white flex items-center gap-2 shadow-inner">
-      <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
-      <span id="status-text">Online</span>
+    <div class="flex items-center gap-4">
+      <div id="status-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500 text-white flex items-center gap-2 shadow-inner transition-colors duration-300">
+        <span id="status-dot" class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+        <span id="status-text">Online</span>
+      </div>
+      <button id="logout-btn" class="hidden text-xs font-bold bg-sky-800 hover:bg-sky-900 px-3 py-1 rounded shadow transition-colors">
+        Logout
+      </button>
     </div>
   </header>
 
   <main class="flex-1 max-w-2xl w-full mx-auto flex flex-col p-4 overflow-hidden relative">
     
-    <div id="chat-history" class="flex-1 overflow-y-auto bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col gap-4 mb-4">
-      <div class="self-start bg-sky-50 text-slate-800 p-3 rounded-2xl rounded-tl-sm text-sm max-w-[85%] shadow-sm border border-sky-100 prose">
-        <p>Namaste! Aaj malaria ya ASHA duties ke baare mein kya janna chahti hain?</p>
+    <div id="online-ui" class="flex-1 flex flex-col overflow-hidden">
+      <div id="chat-history" class="flex-1 overflow-y-auto bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col gap-4 mb-4">
+        <div class="self-start bg-sky-50 text-slate-800 p-3 rounded-2xl rounded-tl-sm text-sm max-w-[85%] shadow-sm border border-sky-100 prose">
+          <p>Namaste! Aaj malaria ya ASHA duties ke baare mein kya janna chahti hain?</p>
+        </div>
+      </div>
+
+      <div class="bg-white p-2 rounded-2xl shadow-md border border-slate-200 flex items-end gap-2 focus-within:ring-2 focus-within:ring-sky-500">
+        <button id="mic-btn" class="p-3 bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors flex-shrink-0 mb-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+        </button>
+        <textarea id="chat-input" rows="1" class="flex-1 max-h-32 p-2 bg-transparent outline-none text-sm text-slate-700 placeholder-slate-400" placeholder="Type a message..."></textarea>
+        <button id="send-btn" class="p-3 bg-sky-600 hover:bg-sky-700 text-white rounded-full transition-colors flex-shrink-0 mb-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+        </button>
       </div>
     </div>
 
-    <div class="bg-white p-2 rounded-2xl shadow-md border border-slate-200 flex items-end gap-2 transition-all focus-within:ring-2 focus-within:ring-sky-500">
-      <button id="mic-btn" class="p-3 bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors flex-shrink-0 mb-1">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-      </button>
-      
-      <textarea id="chat-input" rows="1" class="flex-1 max-h-32 p-2 bg-transparent outline-none text-sm text-slate-700 placeholder-slate-400" placeholder="Type a message..."></textarea>
-      
-      <button id="send-btn" class="p-3 bg-sky-600 hover:bg-sky-700 text-white rounded-full transition-colors flex-shrink-0 mb-1">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
-      </button>
+    <div id="offline-ui" class="hidden flex-1 overflow-y-auto">
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+        <div class="flex items-center gap-2 mb-4">
+          <svg class="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          <h2 class="text-lg font-bold text-slate-800">Offline Protocol</h2>
+        </div>
+        <p class="text-sm text-slate-500 mb-6">Network lost. Using local NVBDCP rules.</p>
+        
+       <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1">Patient Age</label>
+              <input type="number" id="p-age" placeholder="Years" required class="w-full p-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1">Gender</label>
+              <select id="p-gender" class="w-full p-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+                <option value="Female">Female</option>
+                <option value="Male">Male</option>
+              </select>
+            </div>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-1">Is Patient Pregnant?</label>
+            <select id="p-pregnant" class="w-full p-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 outline-none transition-colors">
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-1">RDT Test Result</label>
+            <select id="p-test" class="w-full p-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 outline-none mb-2">
+              <option value="Negative">Negative</option>
+              <option value="Pf_Positive">Pf Positive (Falciparum)</option>
+              <option value="Pv_Positive">Pv Positive (Vivax)</option>
+            </select>
+            
+            <details class="bg-slate-50 border border-slate-200 rounded-lg p-3">
+              <summary class="text-sm font-semibold text-sky-700 cursor-pointer outline-none">Need help doing the RDT test?</summary>
+              <ul class="mt-2 text-xs text-slate-600 list-disc pl-4 space-y-1">
+                <li>Wipe the patient's finger with an alcohol swab and let it dry.</li>
+                <li>Prick the finger with the sterile lancet.</li>
+                <li>Collect blood with the capillary tube and put it in the sample well (S).</li>
+                <li>Add 2 drops of buffer solution to the buffer well (A).</li>
+                <li><strong>Wait exactly 15-20 minutes</strong> before reading. Do not read after 30 mins!</li>
+              </ul>
+            </details>
+          </div>
+
+          <button id="calculate-btn" class="w-full p-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg transition-colors mt-2">
+            Calculate Treatment
+          </button>
+        </div>
+
+        <div id="result-box" class="hidden mt-6 p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-lg">
+          <strong class="text-amber-800 text-sm block mb-1">Treatment:</strong>
+          <p id="res-treatment" class="text-sm text-slate-700 mb-3"></p>
+          <strong class="text-red-700 text-sm block mb-1">Action:</strong>
+          <p id="res-action" class="text-sm text-slate-700"></p>
+        </div>
+      </div>
     </div>
   </main>
 
   <script src="js/db.js"></script>
   <script src="js/protocol_engine.js"></script>
   <script>
-    // --- UI Logic & Auto-expanding Textarea ---
+    // --- 1. Service Worker Registration ---
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('ServiceWorker registered'))
+          .catch(err => console.log('ServiceWorker error: ', err));
+      });
+    }
+    // --- AUTHENTICATION & PROFILE LOGIC ---
+    const authScreen = document.getElementById('auth-screen');
+    const authActionBtn = document.getElementById('auth-action-btn');
+    const authToggleBtn = document.getElementById('auth-toggle-btn');
+    const authSubtitle = document.getElementById('auth-subtitle');
+    const authToggleText = document.getElementById('auth-toggle-text');
+    const authError = document.getElementById('auth-error');
+    
+    const logoutBtn = document.getElementById('logout-btn');
+    const userProfileName = document.getElementById('user-profile-name');
+    
+    let isLoginMode = true; 
+
+    // Read the token from the browser's memory
+    const token = localStorage.getItem('asha_token');
+
+    if (token) {
+      // 1. Hide the login screen
+      authScreen.classList.add('hidden');
+      
+      // 2. Show the logout button
+      logoutBtn.classList.remove('hidden');
+      
+      // 3. Extract the username (Token looks like: asha_USERNAME_valid)
+      const username = token.split('_')[1]; 
+      
+      // 4. Capitalize the first letter and update the UI
+      const capitalizedName = username.charAt(0).toUpperCase() + username.slice(1);
+      userProfileName.textContent = `Welcome, ASHA ${capitalizedName}`;
+    }
+
+    // Handle Logout
+    logoutBtn.addEventListener('click', () => {
+      localStorage.removeItem('asha_token');
+      window.location.reload(); // Refreshing forces the login screen to reappear
+    });
+
+    // Toggle between Login and Signup modes
+    authToggleBtn.addEventListener('click', () => {
+      isLoginMode = !isLoginMode;
+      authActionBtn.textContent = isLoginMode ? 'Login' : 'Create Account';
+      authSubtitle.textContent = isLoginMode ? 'Please login to continue' : 'Register a new ASHA account';
+      authToggleText.textContent = isLoginMode ? "Don't have an account?" : "Already have an account?";
+      authToggleBtn.textContent = isLoginMode ? 'Sign Up' : 'Login';
+      authError.classList.add('hidden');
+    });
+
+    // Handle Login/Signup Button Click
+    authActionBtn.addEventListener('click', async () => {
+      const username = document.getElementById('auth-username').value.trim();
+      const password = document.getElementById('auth-password').value.trim();
+
+      if (!username || !password) {
+        authError.textContent = "Please fill in all fields.";
+        authError.classList.remove('hidden');
+        return;
+      }
+
+      authActionBtn.textContent = "Processing...";
+      
+      try {
+        const endpoint = isLoginMode ? '/login' : '/signup';
+        const response = await fetch(`http://127.0.0.1:8000${endpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          localStorage.setItem('asha_token', data.token);
+          window.location.reload(); // Reload to immediately run the profile update logic
+        } else {
+          authError.textContent = data.detail || "Authentication failed.";
+          authError.classList.remove('hidden');
+          authActionBtn.textContent = isLoginMode ? 'Login' : 'Create Account';
+        }
+      } catch (error) {
+        authError.textContent = "Server offline. Cannot verify credentials right now.";
+        authError.classList.remove('hidden');
+        authActionBtn.textContent = isLoginMode ? 'Login' : 'Create Account';
+      }
+    });
+
+    // --- 2. Network Toggle Logic ---
+    const onlineUI = document.getElementById('online-ui');
+    const offlineUI = document.getElementById('offline-ui');
+    const statusBadge = document.getElementById('status-badge');
+    const statusText = document.getElementById('status-text');
+    const statusDot = document.getElementById('status-dot');
+
+    function updateNetworkStatus() {
+      if (navigator.onLine) {
+        statusBadge.classList.replace('bg-amber-500', 'bg-emerald-500');
+        statusText.textContent = 'Online';
+        statusDot.classList.add('animate-pulse');
+        onlineUI.classList.remove('hidden');
+        onlineUI.classList.add('flex');
+        offlineUI.classList.add('hidden');
+      } else {
+        statusBadge.classList.replace('bg-emerald-500', 'bg-amber-500');
+        statusText.textContent = 'Offline';
+        statusDot.classList.remove('animate-pulse');
+        onlineUI.classList.remove('flex');
+        onlineUI.classList.add('hidden');
+        offlineUI.classList.remove('hidden');
+      }
+    }
+    window.addEventListener('online', updateNetworkStatus);
+    window.addEventListener('offline', updateNetworkStatus);
+    updateNetworkStatus();
+
+    // --- 3. Offline UI Clinical Validation ---
+    const ageInput = document.getElementById('p-age');
+    const genderSelect = document.getElementById('p-gender');
+    const pregnantSelect = document.getElementById('p-pregnant');
+
+    // Smart function to lock/unlock pregnancy based on multiple rules
+    function checkPregnancyRules() {
+      const currentAge = parseInt(ageInput.value) || 0;
+      const gender = genderSelect.value;
+      
+      if (currentAge < 15 || gender === "Male") {
+        pregnantSelect.value = "No";
+        pregnantSelect.disabled = true;
+        pregnantSelect.classList.add('bg-slate-100', 'text-slate-400');
+      } else {
+        pregnantSelect.disabled = false;
+        pregnantSelect.classList.remove('bg-slate-100', 'text-slate-400');
+      }
+    }
+
+    // Listen for changes in BOTH age and gender
+    ageInput.addEventListener('input', checkPregnancyRules);
+    genderSelect.addEventListener('change', checkPregnancyRules);
+
+    // --- 4. Offline Form Submission ---
+    document.getElementById('calculate-btn').addEventListener('click', () => {
+      const age = parseInt(ageInput.value);
+      const gender = genderSelect.value;
+      const test = document.getElementById('p-test').value;
+      const pregnant = pregnantSelect.value;
+      
+      if (isNaN(age)) return alert("Please enter the patient's age.");
+
+      // Pass the new gender variable to the brain
+      const advice = evaluatePatient(age, gender, test, pregnant);
+      
+      document.getElementById('res-treatment').textContent = advice.treatment;
+      document.getElementById('res-action').textContent = advice.action;
+      document.getElementById('result-box').classList.remove('hidden');
+
+      // Save the log (including gender) for offline syncing later
+      saveLogOffline({ age, gender, test, pregnant, action_taken: advice.action })
+        .then(msg => console.log(msg)).catch(err => console.error(err));
+    });
+
+    // --- 5. Online Chat Logic ---
     const chatInput = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('send-btn');
+    const chatHistory = document.getElementById('chat-history');
+    let conversationMemory = []; 
+
     chatInput.addEventListener('input', function() {
       this.style.height = 'auto';
       this.style.height = (this.scrollHeight) + 'px';
     });
 
-    // --- Online Chat Logic ---
-    const sendBtn = document.getElementById('send-btn');
-    const chatHistory = document.getElementById('chat-history');
-    let conversationMemory = []; 
-
     function appendMessage(text, sender) {
       const msgDiv = document.createElement('div');
       msgDiv.className = `p-3 rounded-2xl text-sm max-w-[85%] shadow-sm prose ${
-        sender === 'user' 
-          ? 'self-end bg-sky-600 text-white rounded-tr-sm' 
-          : 'self-start bg-sky-50 text-slate-800 rounded-tl-sm border border-sky-100'
+        sender === 'user' ? 'self-end bg-sky-600 text-white rounded-tr-sm' : 'self-start bg-sky-50 text-slate-800 rounded-tl-sm border border-sky-100'
       }`;
       
-      // Magic: Convert Markdown to HTML securely!
       if (sender === 'user') {
-        msgDiv.textContent = text; // Keep user text raw
+        msgDiv.textContent = text;
       } else {
         msgDiv.innerHTML = marked.parse(text); 
-        // Fix Tailwind typography color inheritance for bot
         const strongs = msgDiv.querySelectorAll('strong');
         strongs.forEach(s => s.style.color = '#0284c7');
       }
@@ -105,7 +363,7 @@
 
       appendMessage(userText, 'user');
       chatInput.value = '';
-      chatInput.style.height = 'auto'; // reset height
+      chatInput.style.height = 'auto';
 
       const loader = document.createElement('div');
       loader.id = 'typing-indicator';
@@ -141,6 +399,59 @@
         sendBtn.click();
       }
     });
+
+    // --- 6. VOICE-TO-TEXT (MICROPHONE) ---
+    const micBtn = document.getElementById('mic-btn');
+    
+    // Check if the browser supports Speech Recognition
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      
+      // Force the AI to listen for Hindi (and Hinglish)
+      recognition.lang = 'hi-IN'; 
+      recognition.interimResults = false;
+
+      micBtn.addEventListener('click', () => {
+        // Make the button pulse so the user knows it is listening
+        micBtn.classList.add('animate-pulse', 'bg-red-700');
+        recognition.start();
+      });
+
+      // When the AI finishes translating the voice to text
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        
+        // Put the words into the chat box
+        chatInput.value = transcript;
+        chatInput.style.height = 'auto';
+        chatInput.style.height = (chatInput.scrollHeight) + 'px';
+        
+        // Turn off the pulsing animation
+        micBtn.classList.remove('animate-pulse', 'bg-red-700');
+      };
+
+      // Handle errors (like user denying microphone permission)
+      recognition.onerror = (event) => {
+        console.error("Speech recognition error:", event.error);
+        micBtn.classList.remove('animate-pulse', 'bg-red-700');
+        alert("Microphone error. Please make sure you granted permission!");
+      };
+      
+      // Stop listening when they stop talking
+      recognition.onspeechend = () => {
+        recognition.stop();
+        micBtn.classList.remove('animate-pulse', 'bg-red-700');
+      };
+    } else {
+      // Fallback if they are using a very old browser
+      micBtn.addEventListener('click', () => {
+        alert("Sorry, voice typing is not supported on this browser.");
+      });
+    } 
+    
   </script>
 </body>
 </html>

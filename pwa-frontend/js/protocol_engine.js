@@ -1,6 +1,6 @@
 // js/protocol_engine.js
 
-function evaluatePatient(age, testResult, isPregnant) {
+function evaluatePatient(age, gender, testResult, isPregnant) {
   let treatment = "";
   let action = "";
 
@@ -8,11 +8,18 @@ function evaluatePatient(age, testResult, isPregnant) {
   if (age < 0 || age > 120) {
     return { treatment: "INVALID INPUT", action: "Age must be between 0 and 120." };
   }
-  
-  if (age < 10 && isPregnant === "Yes") {
+
+  if (gender === "Male" && isPregnant === "Yes") {
     return { 
       treatment: "DATA ERROR", 
-      action: "A patient under 10 years old cannot be marked as pregnant. Please verify the age." 
+      action: "A male patient cannot be marked as pregnant. Please fix the gender or pregnancy selection." 
+    };
+  }
+  
+  if (age < 15 && isPregnant === "Yes") {
+    return { 
+      treatment: "DATA ERROR", 
+      action: "A patient under 15 years old cannot be marked as pregnant in this system. Please verify the age." 
     };
   }
   // ----------------------------------------

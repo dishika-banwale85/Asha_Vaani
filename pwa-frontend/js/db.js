@@ -28,9 +28,19 @@ const initDB = () => {
   });
 };
 
+// 1. CRITICAL FIX: Actually execute the initialization function when the script loads
+initDB().catch(console.error);
+
 // Save a patient record offline
 const saveLogOffline = (record) => {
   return new Promise((resolve, reject) => {
+    
+    // 2. SAFETY GUARD: If the DB is somehow still undefined, don't crash the UI!
+    if (!db) {
+        console.warn('[IndexedDB] Database not ready yet, skipping save.');
+        return resolve('Skipped save - DB not ready');
+    }
+
     const transaction = db.transaction([STORE_NAME], 'readwrite');
     const store = transaction.objectStore(STORE_NAME);
     

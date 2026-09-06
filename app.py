@@ -8,7 +8,7 @@ from dotenv import load_dotenv  # <-- Add this import
 
 # Load the secret keys from your .env file
 load_dotenv()
-
+print("DEBUG - Did Python find the key?:", os.environ.get("GROQ_API_KEY"))
 # --- App Configuration ---
 st.set_page_config(
     page_title="Asha Vani",

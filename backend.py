@@ -1,5 +1,7 @@
 import os
 import sqlite3
+import hashlib
+from fastapi import HTTPException
 from datetime import datetime
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -12,12 +14,67 @@ from langchain_ollama import ChatOllama
 from fastapi.middleware.cors import CORSMiddleware
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 
+
 from dotenv import load_dotenv  # <-- 1. Import the library
 
 load_dotenv()
 
 # 1. Initialize the app ONCE with your title
 app = FastAPI(title="NVBDCP RAG Decision Support Backend")
+
+# --- AUTHENTICATION SYSTEM ---
+
+# 1. Pydantic Model for incoming login/signup data
+class UserAuth(BaseModel):
+    username: str
+    password: str
+
+# 2. Secure Password Hashing
+def hash_password(password: str) -> str:
+    return hashlib.sha256(password.encode()).hexdigest()
+
+# 3. Initialize the SQLite Users Database
+def init_user_db():
+    conn = sqlite3.connect("users.db")
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS users
+                 (username TEXT PRIMARY KEY, password_hash TEXT)''')
+    conn.commit()
+    conn.close()
+
+init_user_db()
+
+# 4. Signup Endpoint
+@app.post("/signup")
+def signup(user: UserAuth):
+    conn = sqlite3.connect("users.db")
+    c = conn.cursor()
+    try:
+        # Save the username and the SECURE HASH of the password
+        c.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)", 
+                  (user.username, hash_password(user.password)))
+        conn.commit()
+        # Return a simple token so the phone knows they are logged in
+        return {"message": "Account created!", "token": f"asha_{user.username}_valid"}
+    except sqlite3.IntegrityError:
+        raise HTTPException(status_code=400, detail="Username already exists. Please login.")
+    finally:
+        conn.close()
+
+# 5. Login Endpoint
+@app.post("/login")
+def login(user: UserAuth):
+    conn = sqlite3.connect("users.db")
+    c = conn.cursor()
+    c.execute("SELECT password_hash FROM users WHERE username=?", (user.username,))
+    result = c.fetchone()
+    conn.close()
+
+    # Check if user exists AND password matches the hash
+    if result and result[0] == hash_password(user.password):
+        return {"message": "Login successful", "token": f"asha_{user.username}_valid"}
+    else:
+        raise HTTPException(status_code=401, detail="Invalid username or password.")
 
 # 2. Attach the CORS Middleware to it
 app.add_middleware(
@@ -73,13 +130,19 @@ robust_llm = primary_llm.with_fallbacks([backup_llm])
    #-------------used for offline Puspose-----------------
 
 #local_llm = ChatOllama(model="gemma2:2b", temperature=0.3)
+def build_retrieval_query(user_msg: str, history: list) -> str:
+    if len(user_msg.strip().split()) <= 4 and history:
+        last_bot_msg = next((m["text"] for m in reversed(history) if m["sender"] == "bot"), "")
+        return f"{last_bot_msg} {user_msg}"
+    return user_msg
 
 @app.post("/chat")
 async def chat_with_rag(chat_input: ChatInput):
     user_msg = chat_input.message
 
     try:
-        docs = retriever.invoke(user_msg)
+        retrieval_query = build_retrieval_query(user_msg, chat_input.history)
+        docs = retriever.invoke(retrieval_query)
         retrieved_context = "\n\n---\n\n".join([doc.page_content for doc in docs])
 
         
@@ -114,8 +177,12 @@ ONLY if the user explicitly ends the conversation (e.g., "bye", "no thanks") OR 
 GENERAL RULES:
 1. EXTREME BREVITY: Provide very short, bulleted answers (2-3 sentences max) for medical/administrative questions.
 2. TRANSLATION COMMANDS: If the user explicitly asks you to "explain in Hindi" or "translate", just translate the facts using your internal knowledge. 
-3. LANGUAGE CHAMELEON: Reply in the exact same language the user typed (English or Hindi/Hinglish).
-4. CONDITIONAL FOLLOW-UP: Suggest 1 relevant follow-up question ONLY IF you successfully answered a BUCKET 1 or BUCKET 2 question.
+3. LANGUAGE CHAMELEON: Reply in the exact same language the user typed (English or Hindi/Hinglish). Do not switch language on your own; only switch if the user's latest message is clearly in a different language than before.
+4. CONDITIONAL FOLLOW-UP (STRICT): Suggest 1 follow-up question ONLY IF:
+   a) You successfully answered a BUCKET 1 or BUCKET 2 question, AND
+   b) The follow-up topic is explicitly visible as a heading, bullet, or sub-topic inside the OFFICIAL NVBDCP GUIDELINE CONTEXT below.
+   Do NOT invent a "logical next step" follow-up that sounds reasonable but isn't literally present in the context.
+   If no such follow-up topic exists in the context, end your response with no follow-up at all — do not force one.
 
 OFFICIAL NVBDCP GUIDELINE CONTEXT:
 {retrieved_context}
