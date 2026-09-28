@@ -1,4 +1,5 @@
-const CACHE_NAME = 'asha-vani-cache-v2';
+const CACHE_NAME = 'asha-vani-cache-v3';
+
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -7,52 +8,167 @@ const ASSETS_TO_CACHE = [
   './icons/icon-512.png'
 ];
 
-// Install Event: Cache core files immediately
+
+// ===============================
+// INSTALL
+// ===============================
 self.addEventListener('install', (event) => {
+
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
+
       console.log('[Service Worker] Caching core assets');
+
       return cache.addAll(ASSETS_TO_CACHE);
+
     })
   );
+
   self.skipWaiting();
 });
 
-// Activate Event: Clear older caches if version bumps
+
+// ===============================
+// ACTIVATE
+// ===============================
 self.addEventListener('activate', (event) => {
+
   event.waitUntil(
+
     caches.keys().then((cacheNames) => {
+
       return Promise.all(
+
         cacheNames.map((cache) => {
+
           if (cache !== CACHE_NAME) {
-            console.log('[Service Worker] Clearing old cache:', cache);
+
+            console.log(
+              '[Service Worker] Deleting old cache:',
+              cache
+            );
+
             return caches.delete(cache);
+
           }
+
         })
+
       );
+
     })
+
   );
+
   self.clients.claim();
+
 });
 
-// Fetch Event: Cache First, Network Fallback strategy for static shell
+
+// ===============================
+// FETCH
+// ===============================
 self.addEventListener('fetch', (event) => {
-  // If request is calling our FastAPI backend, pass directly to network
-  if (event.request.url.includes('/chat') || event.request.url.includes('/sync')) {
+
+  const request = event.request;
+  const url = new URL(request.url);
+
+
+  // ==========================================
+  // NEVER CACHE API / BACKEND REQUESTS
+  // ==========================================
+  if (
+    url.port === '8000' ||
+    url.pathname.startsWith('/api/') ||
+    url.pathname.includes('/chat') ||
+    url.pathname.includes('/sync')
+  ) {
+
     return;
+
   }
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(event.request).catch(() => {
-        // Offline fallback
-        if (event.request.headers.get('accept').includes('text/html')) {
+
+  // ==========================================
+  // HTML PAGES
+  // ALWAYS TRY NETWORK FIRST
+  // ==========================================
+  if (
+    request.mode === 'navigate' ||
+    request.headers.get('accept')?.includes('text/html')
+  ) {
+
+    event.respondWith(
+
+      fetch(request)
+        .then((response) => {
+
+          // Save latest HTML in cache
+          const responseClone = response.clone();
+
+          caches.open(CACHE_NAME).then((cache) => {
+
+            cache.put(request, responseClone);
+
+          });
+
+          return response;
+
+        })
+
+        .catch(() => {
+
+          console.log(
+            '[Service Worker] Network unavailable. Loading cached index.html'
+          );
+
           return caches.match('./index.html');
-        }
-      });
+
+        })
+
+    );
+
+    return;
+
+  }
+
+
+  // ==========================================
+  // OTHER STATIC FILES
+  // CACHE FIRST
+  // ==========================================
+  event.respondWith(
+
+    caches.match(request).then((cachedResponse) => {
+
+      if (cachedResponse) {
+
+        return cachedResponse;
+
+      }
+
+      return fetch(request)
+        .then((response) => {
+
+          const responseClone = response.clone();
+
+          caches.open(CACHE_NAME).then((cache) => {
+
+            cache.put(request, responseClone);
+
+          });
+
+          return response;
+
+        })
+        .catch(() => {
+
+          return caches.match('./index.html');
+
+        });
+
     })
+
   );
+
 });
