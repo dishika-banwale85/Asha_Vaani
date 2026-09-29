@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Asha Vaani - Mobile Profile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+
+    <style>
+        * { font-family: system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: #f8fafc; }
+        .leaflet-routing-container { display: none !important; }
+        /* Mobile Scroll Smoothening */
+        ::-webkit-scrollbar { width: 0px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-slate-100 text-slate-800">
+
+    <header class="sticky top-0 bg-sky-700 text-white px-4 py-3.5 shadow-md flex items-center justify-between z-50">
+        <div class="flex items-center gap-3">
+            <button onclick="window.location.href='index.html'" class="p-1 rounded-full hover:bg-sky-800 active:scale-90 transition-transform">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <h1 class="text-base font-bold tracking-wide">ASHA Worker Profile</h1>
+        </div>
+        <span id="sync-indicator" class="text-xs bg-sky-800 text-sky-200 px-2.5 py-1 rounded-full font-medium">Online</span>
+    </header>
+
+    <main class="flex-1 w-full max-w-lg mx-auto p-4 space-y-4 pb-12">
+        
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+            <div class="flex items-center gap-4">
+                <div class="relative w-20 h-20 rounded-full border-2 border-sky-500 shadow-inner overflow-hidden flex-shrink-0 bg-sky-50">
+                    <img id="profile-img" src="https://ui-avatars.com/api/?name=ASHA+Worker&background=0284c7&color=fff&size=120" class="w-full h-full object-cover">
+                    <label for="profile-pic-upload" class="absolute bottom-0 inset-x-0 bg-black/60 text-[10px] text-white font-bold py-1 text-center cursor-pointer">
+                        EDIT
+                    </label>
+                    <input type="file" id="profile-pic-upload" class="hidden" accept="image/*">
+                </div>
+
+                <div class="flex-1 min-w-0">
+                    <h2 id="display-worker-name" class="text-lg font-bold text-slate-900 truncate">ASHA Worker</h2>
+                    <p id="display-worker-id" class="text-xs text-sky-700 font-semibold mt-0.5">ID: Loading...</p>
+                    <span class="inline-block mt-1.5 px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[11px] font-bold rounded border border-emerald-200">Active Duty</span>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-slate-100">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Worker Full Name</label>
+                <input type="text" id="ui-worker-name" placeholder="Enter full name" class="w-full h-11 px-3.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-none">
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+            <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-sky-600"></span>
+                Area Assignment (Live API)
+            </h3>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">1. State</label>
+                <select id="ui-state-select" class="w-full h-11 px-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-none">
+                    <option value="" disabled selected>Loading States from Server...</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">2. District</label>
+                <select id="ui-district-select" disabled class="w-full h-11 px-3 bg-slate-100 border border-slate-200 rounded-xl text-sm font-medium text-slate-500 outline-none transition-colors">
+                    <option value="" disabled selected>-- Select State First --</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">3. Assigned Village</label>
+                <select id="ui-village-select" disabled class="w-full h-11 px-3 bg-slate-100 border border-slate-200 rounded-xl text-sm font-medium text-slate-500 outline-none transition-colors">
+                    <option value="" disabled selected>-- Select District First --</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Auto-Mapped Sub-Center</label>
+                <input type="text" id="ui-subcenter-name" readonly placeholder="Auto-mapped from village selection" class="w-full h-11 px-3.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-sky-800 outline-none">
+            </div>
+
+            <button id="save-profile-btn" class="w-full h-12 bg-sky-600 hover:bg-sky-700 active:scale-[0.98] text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 mt-2">
+                <span>Save Profile Details</span>
+            </button>
+            <p id="save-status" class="text-xs text-center font-bold hidden"></p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-800">Field Navigation</h3>
+                    <p class="text-[11px] text-slate-500">Live GPS & Sub-Center Route</p>
+                </div>
+                <button id="find-route-btn" class="h-9 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold rounded-lg shadow transition-all flex items-center gap-1.5">
+                    <span>Route</span> 🚗
+                </button>
+            </div>
+
+            <div id="route-info" class="hidden bg-sky-50 px-4 py-2.5 border-b border-sky-100 text-xs font-bold text-sky-900 flex justify-between items-center">
+                <span id="route-dist">Distance: --</span>
+                <span id="route-time">ETA: --</span>
+            </div>
+
+            <div id="profile-map" class="w-full h-72 z-10"></div>
+        </div>
+
+    </main>
+    <script>
+const BACKEND_URL = "http://127.0.0.1:8000";
+
+        // --- DOM Elements ---
+        const stateSelect = document.getElementById('ui-state-select');
+        const districtSelect = document.getElementById('ui-district-select');
+        const villageSelect = document.getElementById('ui-village-select');
+        const subcenterInput = document.getElementById('ui-subcenter-name');
+        const saveBtn = document.getElementById('save-profile-btn');
+
+        let mapInstance = null;
+        let currentLat = null, currentLon = null;
+        let targetLat = null, targetLon = null;
+        let routingControl = null;
+
+        // --- 1. INITIALIZE MAP (LIVE GPS) ---
+        function initMap() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        currentLat = pos.coords.latitude;
+                        currentLon = pos.coords.longitude;
+
+                        mapInstance = L.map('profile-map').setView([currentLat, currentLon], 14);
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '© OpenStreetMap'
+                        }).addTo(mapInstance);
+
+                        const greenIcon = new L.Icon({
+                            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34]
+                        });
+
+                        L.marker([currentLat, currentLon], {icon: greenIcon})
+                            .addTo(mapInstance)
+                            .bindPopup('<b>Aapki Current Location</b>')
+                            .openPopup();
+                    },
+                    (err) => {
+                        document.getElementById('profile-map').innerHTML = 
+                            '<div class="h-full flex items-center justify-center text-red-500 font-bold">GPS Access Denied.</div>';
+                    },
+                    { enableHighAccuracy: true }
+                );
+            }
+        }
+
+        // --- 2. LOAD STATES FROM API ---
+        async function fetchStates() {
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/locations/states`);
+                const data = await res.json();
+                stateSelect.innerHTML = '<option value="" disabled selected>-- Select State --</option>';
+                data.states.forEach(state => {
+                    const opt = document.createElement('option');
+                    opt.value = state; opt.textContent = state;
+                    stateSelect.appendChild(opt);
+                });
+            } catch (err) {
+                stateSelect.innerHTML = '<option value="" disabled>Server Error</option>';
+            }
+        }
+
+        // --- 3. STATE -> DISTRICT ---
+        stateSelect.addEventListener('change', async function() {
+            districtSelect.disabled = true;
+            districtSelect.innerHTML = '<option value="" disabled selected>Loading...</option>';
+            villageSelect.disabled = true;
+            villageSelect.innerHTML = '<option value="" disabled selected>-- Select District First --</option>';
+            subcenterInput.value = "";
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/locations/districts/${this.value}`);
+                const data = await res.json();
+                districtSelect.innerHTML = '<option value="" disabled selected>-- Select District --</option>';
+                data.districts.forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d; opt.textContent = d;
+                    districtSelect.appendChild(opt);
+                });
+                districtSelect.disabled = false;
+            } catch (err) {}
+        });
+
+        // --- 4. DISTRICT -> VILLAGE ---
+        districtSelect.addEventListener('change', async function() {
+            villageSelect.disabled = true;
+            villageSelect.innerHTML = '<option value="" disabled selected>Loading...</option>';
+            subcenterInput.value = "";
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/locations/villages/${this.value}`);
+                const data = await res.json();
+                villageSelect.innerHTML = '<option value="" disabled selected>-- Select Village --</option>';
+                data.villages.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v.name; opt.textContent = v.name;
+                    opt.dataset.subcenter = v.sub_center;
+                    opt.dataset.lat = v.lat; opt.dataset.lon = v.lon;
+                    villageSelect.appendChild(opt);
+                });
+                villageSelect.disabled = false;
+            } catch (err) {}
+        });
+
+        // --- 5. VILLAGE -> SUB-CENTER & MAP TARGET ---
+        villageSelect.addEventListener('change', function() {
+            const opt = this.options[this.selectedIndex];
+            subcenterInput.value = opt.dataset.subcenter || "Sub-Center not found";
+            targetLat = parseFloat(opt.dataset.lat);
+            targetLon = parseFloat(opt.dataset.lon);
+        });
+
+        // --- 6. ROUTING (MAP NAVIGATION) ---
+        document.getElementById('find-route-btn').addEventListener('click', () => {
+            if (!targetLat || !targetLon) {
+                alert("Please select your Village first!"); return;
+            }
+            if (!currentLat) {
+                alert("GPS loading..."); return;
+            }
+
+            if (routingControl) mapInstance.removeControl(routingControl);
+
+            routingControl = L.Routing.control({
+                waypoints: [L.latLng(currentLat, currentLon), L.latLng(targetLat, targetLon)],
+                routeWhileDragging: false, addWaypoints: false, fitSelectedRoutes: true,
+                lineOptions: { styles: [{color: '#0284c7', weight: 5}] }
+            }).addTo(mapInstance);
+
+            routingControl.on('routesfound', function(e) {
+                const route = e.routes[0];
+                document.getElementById('route-dist').textContent = `Dist: ${(route.summary.totalDistance / 1000).toFixed(2)} km`;
+                document.getElementById('route-time').textContent = `ETA: ${Math.round(route.summary.totalTime / 60)} min`;
+                document.getElementById('route-info').classList.remove('hidden');
+            });
+        });
+
+        // --- 7. SAVE PROFILE TO DB ---
+        saveBtn.addEventListener('click', async () => {
+            const statusMsg = document.getElementById('save-status');
+            const token = sessionStorage.getItem('asha_token');
+            let username = token ? JSON.parse(atob(token.split('.')[1])).sub : "ASHA";
+            
+            const name = document.getElementById('ui-worker-name').value.trim() || username;
+            
+            if (!stateSelect.value || !villageSelect.value) {
+                alert("Please select State, District and Village!"); return;
+            }
+
+            saveBtn.innerText = "Saving...";
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/profile/update`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        worker_id: username, name: name, state: stateSelect.value, district: districtSelect.value,
+                        village: villageSelect.value, sub_center: subcenterInput.value
+                    })
+                });
+
+                if (res.ok) {
+                    statusMsg.textContent = "Profile Saved Successfully! ✅";
+                    statusMsg.classList.remove('hidden');
+                    statusMsg.classList.add('text-emerald-600');
+                    document.getElementById('display-worker-name').textContent = name;
+                } else {
+                    alert("Save failed.");
+                }
+            } catch (err) {
+                alert("Server Connection Failed. (Make sure backend is running!)");
+            }
+            saveBtn.innerText = "Save Profile Details";
+        });
+
+        // --- 8. PROFILE PIC PREVIEW ---
+        document.getElementById('profile-pic-upload').addEventListener('change', function(e) {
+            if (e.target.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (ev) => document.getElementById('profile-img').src = ev.target.result;
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+
+       // --- 9. ON PAGE LOAD ---
+document.addEventListener("DOMContentLoaded", async () => {
+    initMap();
+
+    const token = sessionStorage.getItem('asha_token');
+
+    if (!token) {
+        await fetchStates();
+        return;
+    }
+
+    const username = JSON.parse(atob(token.split('.')[1])).sub;
+
+    document.getElementById('display-worker-id').textContent = `ID: ${username}`;
+    document.getElementById('display-worker-name').textContent = username.toUpperCase();
+    document.getElementById('ui-worker-name').value = username;
+
+    // Load all states first
+    await fetchStates();
+
+    // Then restore this ASHA's saved profile
+    await loadSavedProfile(username);
+});
+
+        // Profile.js ya html file script me
+async function loadSavedProfile(username) {
+    try {
+        const res = await fetch(`${BACKEND_URL}/api/profile/${username}`);
+
+        if (!res.ok) {
+            console.log("No saved profile found.");
+            return;
+        }
+
+        const data = await res.json();
+        console.log("Saved profile:", data);
+
+        // Restore worker name
+        if (data.name) {
+            document.getElementById('ui-worker-name').value = data.name;
+            document.getElementById('display-worker-name').textContent =
+                data.name.toUpperCase();
+        }
+
+        // Restore State
+        if (data.state) {
+            stateSelect.value = data.state;
+
+            // Trigger your EXISTING State -> District code
+            stateSelect.dispatchEvent(new Event('change'));
+
+            // Wait for districts to load
+            while (districtSelect.disabled) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+
+        // Restore District
+        if (data.district) {
+            districtSelect.value = data.district;
+
+            // Trigger your EXISTING District -> Village code
+            districtSelect.dispatchEvent(new Event('change'));
+
+            // Wait for villages to load
+            while (villageSelect.disabled) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+
+        // Restore Village
+        if (data.village) {
+            villageSelect.value = data.village;
+
+            // Trigger your EXISTING Village -> Sub-center code
+            villageSelect.dispatchEvent(new Event('change'));
+        }
+
+    } catch (error) {
+        console.error("Error loading saved profile:", error);
+    }
+}
+    </script>
+
+    
+</body>
+</html>

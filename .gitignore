@@ -1,0 +1,9 @@
+.env
+venv/
+feedback.db
+chroma_db/
+__pycache__/
+users.db
+
+.pytest_cache/
+*.log

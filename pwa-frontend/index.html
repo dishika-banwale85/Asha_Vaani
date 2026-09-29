@@ -1,0 +1,2604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Asha Vani</title>
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0369a1">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    * {
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: #f8fafc;
+    }
+
+    .prose p {
+      margin-bottom: 0.5rem;
+    }
+
+    .prose p:last-child {
+      margin-bottom: 0;
+    }
+
+    .prose strong {
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .prose ul {
+      list-style-type: disc;
+      padding-left: 1.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    #chat-history::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    #chat-history::-webkit-scrollbar-thumb {
+      background-color: #cbd5e1;
+      border-radius: 10px;
+    }
+
+    textarea {
+      resize: none;
+      overflow: hidden;
+    }
+  </style>
+</head>
+
+<body class="h-screen flex flex-col overflow-hidden">
+
+  <!-- ====================================================== -->
+  <!-- AUTH SCREEN - EXISTING                                  -->
+  <!-- ====================================================== -->
+
+  <div id="auth-screen" class="fixed inset-0 z-[100] bg-slate-100 flex items-center justify-center p-4">
+
+    <div class="bg-white max-w-sm w-full rounded-2xl shadow-xl border border-slate-200 p-6">
+
+      <div class="text-center mb-6">
+        <h1 class="text-2xl font-bold text-sky-700 tracking-wide mb-1">
+          आशा वाणी
+        </h1>
+
+        <p id="auth-subtitle" class="text-sm text-slate-500">
+          Please login to continue
+        </p>
+      </div>
+
+      <div class="space-y-4">
+
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">
+            ASHA ID / Username
+          </label>
+
+          <input
+            type="text"
+            id="auth-username"
+            class="w-full p-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none"
+          >
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">
+            Password
+          </label>
+
+          <input
+            type="password"
+            id="auth-password"
+            class="w-full p-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none"
+          >
+        </div>
+
+        <div id="state-container" class="hidden">
+
+          <label class="block text-sm font-semibold text-slate-700 mb-1">
+            State
+          </label>
+
+          <select
+            id="auth-state"
+            class="w-full p-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none"
+          >
+            <option value="Madhya Pradesh" selected>
+              Madhya Pradesh
+            </option>
+
+            <option value="Chhattisgarh">
+              Chhattisgarh
+            </option>
+
+            <option value="Odisha">
+              Odisha
+            </option>
+
+            <option value="Jharkhand">
+              Jharkhand
+            </option>
+
+            <option value="Assam">
+              Assam
+            </option>
+          </select>
+
+        </div>
+
+        <p
+          id="auth-error"
+          class="text-red-500 text-xs hidden text-center font-semibold"
+        ></p>
+
+        <button
+          id="auth-action-btn"
+          class="w-full p-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-lg transition-colors mt-2"
+        >
+          Login
+        </button>
+
+      </div>
+
+      <div class="mt-4 text-center">
+
+        <p class="text-xs text-slate-500">
+
+          <span id="auth-toggle-text">
+            Don't have an account?
+          </span>
+
+          <button
+            id="auth-toggle-btn"
+            class="text-sky-600 font-bold hover:underline"
+          >
+            Sign Up
+          </button>
+
+        </p>
+
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ====================================================== -->
+  <!-- HEADER - EXISTING                                      -->
+  <!-- ====================================================== -->
+
+  <header class="bg-gradient-to-r from-sky-700 via-sky-600 to-orange-500 text-white p-3 sm:p-4 shadow-lg flex justify-between items-center z-50">
+
+    <div class="flex items-center gap-3">
+
+      <!-- RECENT QUESTIONS MENU -->
+      <button
+        id="history-menu-btn"
+        type="button"
+        aria-label="Previous questions"
+        class="w-10 h-10 flex items-center justify-center rounded-xl bg-white/15 hover:bg-white/25 active:scale-95 transition-all border border-white/20"
+      >
+        <svg
+          class="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 6h16M4 12h16M4 18h16"
+          ></path>
+        </svg>
+      </button>
+
+      <div>
+
+        <h1 class="text-lg font-bold tracking-wide">
+          आशा वाणी
+        </h1>
+
+        <p
+          id="user-profile-name"
+          class="text-xs text-sky-100"
+        >
+          Decision Support System
+        </p>
+
+      </div>
+
+    </div>
+
+    <div class="flex items-center gap-4">
+
+      <div
+        id="status-badge"
+        class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500 text-white flex items-center gap-2 shadow-inner transition-colors duration-300"
+      >
+
+        <span
+          id="status-dot"
+          class="w-2 h-2 rounded-full bg-white animate-pulse"
+        ></span>
+
+        <span id="status-text">
+          Online
+        </span>
+
+      </div>
+
+      <button
+        id="logout-btn"
+        class="hidden text-xs font-bold bg-sky-800 hover:bg-sky-900 px-3 py-1 rounded shadow transition-colors"
+      >
+        Logout
+      </button>
+
+      <button
+        id="profileBtn"
+        class="hidden text-xs font-bold bg-sky-800 hover:bg-sky-900 px-3 py-1 rounded shadow transition-colors"
+      >
+        👤 Profile
+      </button>
+
+    </div>
+
+  </header>
+
+
+  <!-- ====================================================== -->
+  <!-- RECENT QUESTIONS DRAWER -->
+  <div id="history-drawer" class="fixed inset-0 z-[100] hidden">
+
+    <!-- Backdrop -->
+    <div
+      id="history-backdrop"
+      class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+    ></div>
+
+    <!-- Drawer -->
+    <aside
+      id="history-panel"
+      class="absolute left-0 top-0 bottom-0 w-[85%] max-w-sm bg-white/95 backdrop-blur-xl shadow-2xl border-r border-sky-100 flex flex-col"
+    >
+
+      <div class="flex items-center justify-between p-4 border-b border-slate-100 bg-gradient-to-r from-sky-50 to-orange-50">
+
+        <div>
+          <h2 class="text-base font-bold text-slate-800">
+            Recent Questions
+          </h2>
+
+          <p class="text-xs text-slate-500 mt-0.5">
+            Your last 5 questions
+          </p>
+        </div>
+
+        <button
+          id="history-close-btn"
+          type="button"
+          aria-label="Close history"
+          class="w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 active:scale-95 transition-all"
+        >
+          ✕
+        </button>
+
+      </div>
+
+      <div
+        id="recent-questions-list"
+        class="flex-1 overflow-y-auto p-3 space-y-2"
+      >
+        <p class="text-sm text-slate-400 text-center py-8">
+          No recent questions yet.
+        </p>
+      </div>
+
+    </aside>
+
+  </div>
+
+  <!-- MAIN                                                    -->
+  <!-- ====================================================== -->
+
+  <main class="flex-1 max-w-2xl w-full mx-auto flex flex-col p-3 sm:p-4 overflow-hidden relative bg-gradient-to-b from-sky-50/70 via-white to-orange-50/40">
+
+
+    <!-- ==================================================== -->
+    <!-- ONLINE UI - EXISTING                                 -->
+    <!-- ==================================================== -->
+
+    <div
+      id="online-ui"
+      class="flex-1 flex flex-col overflow-hidden"
+    >
+
+      <div
+        id="chat-history"
+        class="flex-1 overflow-y-auto bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-sky-100 p-3 sm:p-4 flex flex-col gap-4 mb-4"
+      >
+
+        <div
+          class="self-start bg-sky-50 text-slate-800 p-3 rounded-2xl rounded-tl-sm text-sm max-w-[85%] shadow-sm border border-sky-100 prose"
+        >
+
+          <p>
+            Namaste! Aaj malaria ya ASHA duties ke baare mein kya janna chahti hain?
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <!-- MOBILE CHAT COMPOSER -->
+      <div
+        class="relative bg-white/90 backdrop-blur-xl p-2 rounded-3xl shadow-lg border border-sky-100 flex items-end gap-2 focus-within:ring-2 focus-within:ring-sky-200 transition-all"
+      >
+
+        <!-- ADD / CAMERA BUTTON -->
+        <button
+          id="add-media-btn"
+          type="button"
+          aria-label="Add photo"
+          class="w-11 h-11 flex items-center justify-center rounded-full bg-orange-50 text-orange-500 border border-orange-100 hover:bg-orange-100 active:scale-95 transition-all flex-shrink-0 mb-0.5"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 5v14M5 12h14"
+            ></path>
+          </svg>
+        </button>
+
+        <!-- HIDDEN PHOTO INPUT - UI ONLY FOR NOW -->
+        <input
+          id="chat-image-input"
+          type="file"
+          accept="image/*"
+          capture="environment"
+          class="hidden"
+        >
+
+        <!-- MESSAGE INPUT -->
+        <textarea
+          id="chat-input"
+          rows="1"
+          class="flex-1 min-w-0 max-h-28 px-3 py-2.5 bg-transparent outline-none text-sm text-slate-700 placeholder-slate-400"
+          placeholder="Ask Asha Vaani..."
+        ></textarea>
+
+        <!-- MICROPHONE -->
+        <button
+          id="mic-btn"
+          type="button"
+          aria-label="Voice input"
+          class="w-11 h-11 flex items-center justify-center rounded-full bg-blue-50 text-sky-600 border border-sky-100 hover:bg-sky-100 active:scale-95 transition-all flex-shrink-0 mb-0.5"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+            ></path>
+          </svg>
+        </button>
+
+        <!-- SEND -->
+        <button
+          id="send-btn"
+          type="button"
+          aria-label="Send message"
+          class="w-11 h-11 flex items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-md active:scale-95 transition-all flex-shrink-0 mb-0.5"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+            ></path>
+          </svg>
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <!-- ==================================================== -->
+    <!-- OFFLINE UI                                           -->
+    <!-- ==================================================== -->
+
+    <div
+      id="offline-ui"
+      class="hidden flex-1 overflow-y-auto"
+    >
+
+      <div
+        class="bg-white rounded-xl shadow-sm border border-slate-200 p-5"
+      >
+
+        <!-- Offline heading -->
+
+        <div class="flex items-center gap-2 mb-2">
+
+          <svg
+            class="w-6 h-6 text-amber-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            ></path>
+
+          </svg>
+
+          <h2 class="text-lg font-bold text-slate-800">
+            Offline Protocol
+          </h2>
+
+        </div>
+
+        <p class="text-sm text-slate-500 mb-4">
+          Network lost. Using local malaria protocol.
+        </p>
+
+
+        <!-- ================================================= -->
+        <!-- NEW: REGION DISPLAY                               -->
+        <!-- ================================================= -->
+
+        <div
+          id="offline-region-box"
+          class="mb-5 p-3 bg-sky-50 border border-sky-100 rounded-lg"
+        >
+
+          <div class="flex items-center justify-between">
+
+            <div>
+
+              <p class="text-xs text-slate-500">
+                Patient Treatment Region
+              </p>
+
+              <p
+                id="offline-region"
+                class="text-sm font-bold text-sky-700"
+              >
+                Loading profile state...
+              </p>
+
+            </div>
+
+            <span
+              class="text-xs bg-sky-100 text-sky-700 px-2 py-1 rounded-full"
+            >
+              Profile
+            </span>
+
+          </div>
+
+          <p
+            id="offline-region-note"
+            class="text-[11px] text-slate-500 mt-1"
+          >
+            Treatment region is taken from the saved ASHA profile.
+          </p>
+
+        </div>
+
+
+        <div class="space-y-5">
+
+
+          <!-- ================================================= -->
+          <!-- PATIENT BASIC DETAILS                            -->
+          <!-- ================================================= -->
+
+          <div>
+
+            <h3 class="text-sm font-bold text-slate-800 mb-3">
+              Patient Information
+            </h3>
+
+            <div class="grid grid-cols-2 gap-4">
+
+              <div>
+
+                <label
+                  class="block text-sm font-semibold text-slate-700 mb-1"
+                >
+                  Patient Age
+                </label>
+
+                <input
+                  type="number"
+                  id="p-age"
+                  placeholder="Years"
+                  required
+                  min="0"
+                  max="120"
+                  class="w-full p-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 outline-none"
+                >
+
+              </div>
+
+
+              <div>
+
+                <label
+                  class="block text-sm font-semibold text-slate-700 mb-1"
+                >
+                  Gender
+                </label>
+
+                <select
+                  id="p-gender"
+                  class="w-full p-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 outline-none"
+                >
+
+                  <option value="Female">
+                    Female
+                  </option>
+
+                  <option value="Male">
+                    Male
+                  </option>
+
+                </select>
+
+              </div>
+
+            </div>
+
+
+            <div class="mt-4">
+
+              <label
+                class="block text-sm font-semibold text-slate-700 mb-1"
+              >
+                Is Patient Pregnant?
+              </label>
+
+              <select
+                id="p-pregnant"
+                class="w-full p-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 outline-none transition-colors"
+              >
+
+                <option value="No">
+                  No
+                </option>
+
+                <option value="Yes">
+                  Yes
+                </option>
+
+              </select>
+
+            </div>
+
+          </div>
+
+
+          <!-- ================================================= -->
+          <!-- NEW: SYMPTOMS                                    -->
+          <!-- ================================================= -->
+
+          <div>
+
+            <h3 class="text-sm font-bold text-slate-800 mb-1">
+              Symptoms
+            </h3>
+
+            <p class="text-xs text-slate-500 mb-3">
+              Select symptoms reported by the patient.
+            </p>
+
+
+            <div class="grid grid-cols-2 gap-2">
+
+              <label class="flex items-center gap-2 p-2 bg-slate-50 rounded-lg text-xs">
+                <input
+                  type="checkbox"
+                  name="symptom"
+                  value="Fever"
+                  class="rounded text-amber-500"
+                >
+                Fever
+              </label>
+
+
+              <label class="flex items-center gap-2 p-2 bg-slate-50 rounded-lg text-xs">
+                <input
+                  type="checkbox"
+                  name="symptom"
+                  value="Chills/Rigors"
+                  class="rounded text-amber-500"
+                >
+                Chills / Rigors
+              </label>
+
+
+              <label class="flex items-center gap-2 p-2 bg-slate-50 rounded-lg text-xs">
+                <input
+                  type="checkbox"
+                  name="symptom"
+                  value="Headache"
+                  class="rounded text-amber-500"
+                >
+                Headache
+              </label>
+
+
+              <label class="flex items-center gap-2 p-2 bg-slate-50 rounded-lg text-xs">
+                <input
+                  type="checkbox"
+                  name="symptom"
+                  value="Bodyache"
+                  class="rounded text-amber-500"
+                >
+                Body ache
+              </label>
+
+
+              <label class="flex items-center gap-2 p-2 bg-slate-50 rounded-lg text-xs">
+                <input
+                  type="checkbox"
+                  name="symptom"
+                  value="Weakness/Fatigue"
+                  class="rounded text-amber-500"
+                >
+                Weakness / Fatigue
+              </label>
+
+
+              <label class="flex items-center gap-2 p-2 bg-slate-50 rounded-lg text-xs">
+                <input
+                  type="checkbox"
+                  name="symptom"
+                  value="Nausea"
+                  class="rounded text-amber-500"
+                >
+                Nausea
+              </label>
+
+
+              <label class="flex items-center gap-2 p-2 bg-slate-50 rounded-lg text-xs">
+                <input
+                  type="checkbox"
+                  name="symptom"
+                  value="Vomiting"
+                  class="rounded text-amber-500"
+                >
+                Vomiting
+              </label>
+
+            </div>
+
+          </div>
+
+
+          <!-- ================================================= -->
+          <!-- NEW: DANGER SIGNS                                -->
+          <!-- ================================================= -->
+
+          <div class="border border-red-100 rounded-xl p-3 bg-red-50">
+
+            <h3 class="text-sm font-bold text-red-700 mb-1">
+              Danger Signs
+            </h3>
+
+            <p class="text-xs text-red-600 mb-3">
+              If any danger sign is present, referral takes priority.
+            </p>
+
+
+            <div class="grid grid-cols-1 gap-2">
+
+              <label class="flex items-center gap-2 p-2 bg-white rounded-lg text-xs">
+                <input
+                  type="checkbox"
+                  name="danger-sign"
+                  value="Confusion/Drowsiness"
+                  class="rounded text-red-500"
+                >
+                Confusion / Drowsiness
+              </label>
+
+
+              <label class="flex items-center gap-2 p-2 bg-white rounded-lg text-xs">
+                <input
+                  type="checkbox"
+                  name="danger-sign"
+                  value="Convulsions"
+                  class="rounded text-red-500"
+                >
+                Convulsions
+              </label>
+
+
+              <label class="flex items-center gap-2 p-2 bg-white rounded-lg text-xs">
+                <input
+                  type="checkbox"
+                  name="danger-sign"
+                  value="Severe weakness / unable to walk"
+                  class="rounded text-red-500"
+                >
+                Severe weakness / unable to walk
+              </label>
+
+
+              <label class="flex items-center gap-2 p-2 bg-white rounded-lg text-xs">
+                <input
+                  type="checkbox"
+                  name="danger-sign"
+                  value="Breathing difficulty"
+                  class="rounded text-red-500"
+                >
+                Breathing difficulty
+              </label>
+
+
+              <label class="flex items-center gap-2 p-2 bg-white rounded-lg text-xs">
+                <input
+                  type="checkbox"
+                  name="danger-sign"
+                  value="Severe anemia suspicion"
+                  class="rounded text-red-500"
+                >
+                Suspected severe anemia
+              </label>
+
+
+              <label class="flex items-center gap-2 p-2 bg-white rounded-lg text-xs">
+                <input
+                  type="checkbox"
+                  name="danger-sign"
+                  value="Jaundice"
+                  class="rounded text-red-500"
+                >
+                Jaundice
+              </label>
+
+
+              <label class="flex items-center gap-2 p-2 bg-white rounded-lg text-xs">
+                <input
+                  type="checkbox"
+                  name="danger-sign"
+                  value="Bleeding"
+                  class="rounded text-red-500"
+                >
+                Bleeding
+              </label>
+
+
+              <label class="flex items-center gap-2 p-2 bg-white rounded-lg text-xs">
+                <input
+                  type="checkbox"
+                  name="danger-sign"
+                  value="Persistent vomiting"
+                  class="rounded text-red-500"
+                >
+                Persistent vomiting
+              </label>
+
+
+              <label class="flex items-center gap-2 p-2 bg-white rounded-lg text-xs">
+                <input
+                  type="checkbox"
+                  name="danger-sign"
+                  value="Severe dehydration"
+                  class="rounded text-red-500"
+                >
+                Severe dehydration
+              </label>
+
+            </div>
+
+          </div>
+
+
+          <!-- ================================================= -->
+          <!-- RDT RESULT                                       -->
+          <!-- ================================================= -->
+
+          <div>
+
+            <label
+              class="block text-sm font-semibold text-slate-700 mb-1"
+            >
+              RDT Test Result
+            </label>
+
+            <select
+              id="p-test"
+              class="w-full p-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 outline-none mb-2"
+            >
+
+              <option value="Negative">
+                Negative
+              </option>
+
+              <option value="Pf_Positive">
+                P. falciparum Positive
+              </option>
+
+              <option value="Pv_Positive">
+                P. vivax Positive
+              </option>
+
+              <!-- NEW -->
+              <option value="Mixed_Positive">
+                Mixed Positive
+              </option>
+
+            </select>
+
+
+            <!-- ================================================= -->
+            <!-- RDT GUIDE                                        -->
+            <!-- ================================================= -->
+
+            <details
+              class="bg-slate-50 border border-slate-200 rounded-lg p-3"
+            >
+
+              <summary
+                class="text-sm font-semibold text-sky-700 cursor-pointer outline-none"
+              >
+                🩸 How to perform RDT test?
+              </summary>
+<!-- RDT VISUAL GUIDE -->
+
+<div class="mt-4">
+
+  <p class="font-bold text-slate-800 text-sm mb-3">
+    RDT Visual Guide
+  </p>
+
+  <div class="space-y-3">
+
+    <!-- KIT -->
+
+    <div class="bg-white border border-slate-200 rounded-lg p-2">
+
+      <p class="text-xs font-bold text-slate-700 mb-2">
+        RDT Kit
+      </p>
+
+      <img
+        src="icon/rdt-kit.png"
+        alt="RDT kit components"
+        class="w-full max-h-48 object-contain rounded"
+      >
+
+    </div>
+
+
+    <!-- STEPS -->
+
+    <div class="bg-white border border-slate-200 rounded-lg p-2">
+
+      <p class="text-xs font-bold text-slate-700 mb-2">
+        RDT Procedure
+      </p>
+
+      <div class="grid grid-cols-3 gap-2">
+
+        <img
+          src="icon/rdt-steps-1.png"
+          alt="RDT step 1"
+          class="w-full rounded border"
+        >
+
+        <img
+          src="icon/rdt-steps-2.png"
+          alt="RDT step 2"
+          class="w-full rounded border"
+        >
+
+        <img
+          src="icon/rdt-steps-3.png"
+          alt="RDT step 3"
+          class="w-full rounded border"
+        >
+
+      </div>
+
+    </div>
+
+
+    <!-- RESULTS -->
+
+    <div class="bg-white border border-slate-200 rounded-lg p-2">
+
+      <p class="text-xs font-bold text-slate-700 mb-2">
+        RDT Result Interpretation
+      </p>
+
+      <div class="grid grid-cols-2 gap-2">
+
+        <div>
+          <img
+            src="icon/rdt-negative.png"
+            alt="RDT negative"
+            class="w-full rounded border"
+          >
+          <p class="text-xs font-semibold text-center mt-1">
+            Negative
+          </p>
+        </div>
+
+        <div>
+          <img
+            src="icon/rdt-pv-positive.png"
+            alt="P. vivax positive"
+            class="w-full rounded border"
+          >
+          <p class="text-xs font-semibold text-center mt-1">
+            P. vivax Positive
+          </p>
+        </div>
+
+        <div>
+          <img
+            src="icon/rdt-pf-positive.png"
+            alt="P. falciparum positive"
+            class="w-full rounded border"
+          >
+          <p class="text-xs font-semibold text-center mt-1">
+            P. falciparum Positive
+          </p>
+        </div>
+
+        <div>
+          <img
+            src="icon/rdt-mixed-positive.png"
+            alt="Mixed positive"
+            class="w-full rounded border"
+          >
+          <p class="text-xs font-semibold text-center mt-1">
+            Mixed Positive
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+              <div class="mt-4 space-y-4">
+
+
+                <!-- LANGUAGE TABS -->
+
+                <div class="flex gap-2">
+
+                  <button
+                    type="button"
+                    id="rdt-en-btn"
+                    class="rdt-language-btn px-3 py-1 rounded-full text-xs font-bold bg-sky-600 text-white"
+                  >
+                    English
+                  </button>
+
+                  <button
+                    type="button"
+                    id="rdt-hi-btn"
+                    class="rdt-language-btn px-3 py-1 rounded-full text-xs font-bold bg-slate-200 text-slate-700"
+                  >
+                    हिंदी
+                  </button>
+
+                </div>
+
+
+                <!-- ENGLISH GUIDE -->
+
+                <div id="rdt-guide-en" class="text-xs text-slate-600 space-y-3">
+
+                  <div>
+                    <p class="font-bold text-slate-800">
+                      Step 1 — Prepare
+                    </p>
+
+                    <p>
+                      Check the RDT kit, expiry date and required materials.
+                    </p>
+                  </div>
+
+
+                  <div>
+                    <p class="font-bold text-slate-800">
+                      Step 2 — Clean the finger
+                    </p>
+
+                    <p>
+                      Clean the patient's finger with an alcohol swab and allow it to dry.
+                    </p>
+                  </div>
+
+
+                  <div>
+                    <p class="font-bold text-slate-800">
+                      Step 3 — Finger prick
+                    </p>
+
+                    <p>
+                      Use the sterile lancet to prick the finger.
+                    </p>
+                  </div>
+
+
+                  <div>
+                    <p class="font-bold text-slate-800">
+                      Step 4 — Add blood
+                    </p>
+
+                    <p>
+                      Collect the required blood sample and place it in the sample well (S).
+                    </p>
+                  </div>
+
+
+                  <div>
+                    <p class="font-bold text-slate-800">
+                      Step 5 — Add buffer
+                    </p>
+
+                    <p>
+                      Add the required amount of buffer according to the instructions supplied with the specific RDT kit.
+                    </p>
+                  </div>
+
+
+                  <div class="p-2 bg-amber-50 border border-amber-200 rounded-lg">
+
+                    <p class="font-bold text-amber-800">
+                      Step 6 — Wait and read
+                    </p>
+
+                    <p class="text-amber-700">
+                      Read the result at the time specified in the kit manufacturer's instructions. Do not interpret a result outside the specified reading window.
+                    </p>
+
+                  </div>
+
+                </div>
+
+
+                <!-- HINDI GUIDE -->
+
+                <div
+                  id="rdt-guide-hi"
+                  class="hidden text-xs text-slate-600 space-y-3"
+                >
+
+                  <div>
+
+                    <p class="font-bold text-slate-800">
+                      चरण 1 — तैयारी करें
+                    </p>
+
+                    <p>
+                      RDT किट, उसकी expiry date और आवश्यक सामग्री जांचें।
+                    </p>
+
+                  </div>
+
+
+                  <div>
+
+                    <p class="font-bold text-slate-800">
+                      चरण 2 — उंगली साफ करें
+                    </p>
+
+                    <p>
+                      मरीज की उंगली को alcohol swab से साफ करें और सूखने दें।
+                    </p>
+
+                  </div>
+
+
+                  <div>
+
+                    <p class="font-bold text-slate-800">
+                      चरण 3 — उंगली में prick करें
+                    </p>
+
+                    <p>
+                      Sterile lancet की मदद से उंगली में prick करें।
+                    </p>
+
+                  </div>
+
+
+                  <div>
+
+                    <p class="font-bold text-slate-800">
+                      चरण 4 — रक्त का नमूना डालें
+                    </p>
+
+                    <p>
+                      आवश्यक रक्त का नमूना लें और उसे sample well (S) में डालें।
+                    </p>
+
+                  </div>
+
+
+                  <div>
+
+                    <p class="font-bold text-slate-800">
+                      चरण 5 — Buffer डालें
+                    </p>
+
+                    <p>
+                      संबंधित RDT kit के निर्देश के अनुसार आवश्यक मात्रा में buffer डालें।
+                    </p>
+
+                  </div>
+
+
+                  <div class="p-2 bg-amber-50 border border-amber-200 rounded-lg">
+
+                    <p class="font-bold text-amber-800">
+                      चरण 6 — प्रतीक्षा करके परिणाम पढ़ें
+                    </p>
+
+                    <p class="text-amber-700">
+                      परिणाम को उसी समय पढ़ें जो संबंधित RDT kit के निर्माता के निर्देशों में दिया गया है। निर्धारित समय के बाहर परिणाम की व्याख्या न करें।
+                    </p>
+
+                  </div>
+
+                </div>
+
+
+                <!-- RESULT INTERPRETATION -->
+
+                <div class="border-t border-slate-200 pt-3">
+
+                  <p class="font-bold text-slate-800 mb-2">
+                    Understanding the result
+                  </p>
+
+                  <div class="space-y-2 text-xs">
+
+                    <div class="p-2 bg-white border border-slate-200 rounded-lg">
+                      <strong>Negative:</strong>
+                      Control line is present and no relevant test line is present.
+                    </div>
+<div class="p-2 bg-white border border-slate-200 rounded-lg">
+    <strong>P. vivax Positive:</strong>
+    Control line and Pv line are visible.
+  </div>
+
+  <div class="p-2 bg-white border border-slate-200 rounded-lg">
+    <strong>P. falciparum Positive:</strong>
+    Control line and Pf line are visible.
+  </div>
+                    <div class="p-2 bg-white border border-slate-200 rounded-lg">
+                      <strong>Positive:</strong>
+                      Follow the interpretation specific to the RDT kit being used.
+                    </div>
+
+                    <div class="p-2 bg-white border border-slate-200 rounded-lg">
+                      <strong>Mixed positive:</strong>
+                      Both malaria species indicators are positive according to the kit's result key.
+                    </div>
+
+                    <div class="p-2 bg-red-50 border border-red-200 rounded-lg">
+                      <strong>Invalid:</strong>
+                      If the control line does not appear, do not interpret the test. Repeat with a new kit/test according to the kit instructions.
+                    </div>
+
+                  </div>
+
+                </div>
+
+
+                <!-- SAFETY NOTE -->
+
+                <div class="p-3 bg-sky-50 border border-sky-100 rounded-lg">
+
+                  <p class="font-bold text-sky-800 text-xs mb-1">
+                    Important
+                  </p>
+
+                  <p class="text-xs text-sky-700">
+                    RDT result interpretation must follow the specific manufacturer's instructions supplied with the kit.
+                  </p>
+
+                </div>
+
+              </div>
+
+            </details>
+
+          </div>
+
+
+          <!-- ================================================= -->
+          <!-- CALCULATE BUTTON                                  -->
+          <!-- ================================================= -->
+
+          <button
+            id="calculate-btn"
+            class="w-full p-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg transition-colors mt-2"
+          >
+            Calculate Treatment
+          </button>
+
+
+          <!-- ================================================= -->
+          <!-- RESULT                                            -->
+          <!-- ================================================= -->
+
+          <div
+            id="result-box"
+            class="hidden mt-6 p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-lg"
+          >
+
+            <strong class="text-amber-800 text-sm block mb-1">
+              Treatment:
+            </strong>
+
+            <p
+              id="res-treatment"
+              class="text-sm text-slate-700 mb-3"
+            ></p>
+
+
+            <strong class="text-red-700 text-sm block mb-1">
+              Action:
+            </strong>
+
+            <p
+              id="res-action"
+              class="text-sm text-slate-700"
+            ></p>
+
+
+            <!-- NEW REGION RESULT -->
+
+            <div
+              id="res-region-container"
+              class="hidden mt-3 pt-3 border-t border-amber-200"
+            >
+
+              <strong class="text-sky-700 text-xs block mb-1">
+                Protocol Region:
+              </strong>
+
+              <p
+                id="res-region"
+                class="text-xs text-slate-600"
+              ></p>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+
+  <!-- ====================================================== -->
+  <!-- EXISTING JS FILES                                      -->
+  <!-- ====================================================== -->
+
+  <script src="js/db.js"></script>
+  <script src="js/protocol_engine.js"></script>
+
+
+  <script>
+
+    // ======================================================
+    // RECENT QUESTIONS DRAWER
+    // ======================================================
+
+    const historyMenuBtn = document.getElementById("history-menu-btn");
+    const historyDrawer = document.getElementById("history-drawer");
+    const historyCloseBtn = document.getElementById("history-close-btn");
+    const historyBackdrop = document.getElementById("history-backdrop");
+
+    function openHistoryDrawer() {
+      if (!historyDrawer) return;
+      historyDrawer.classList.remove("hidden");
+      document.body.classList.add("overflow-hidden");
+    }
+
+    function closeHistoryDrawer() {
+      if (!historyDrawer) return;
+      historyDrawer.classList.add("hidden");
+      document.body.classList.remove("overflow-hidden");
+    }
+
+    historyMenuBtn?.addEventListener("click", openHistoryDrawer);
+    historyCloseBtn?.addEventListener("click", closeHistoryDrawer);
+    historyBackdrop?.addEventListener("click", closeHistoryDrawer);
+
+
+    // ======================================================
+    // 1. SERVICE WORKER - EXISTING
+    // ======================================================
+
+    if ('serviceWorker' in navigator) {
+
+      window.addEventListener('load', () => {
+
+        navigator.serviceWorker.register('sw.js')
+
+          .then(reg => console.log('ServiceWorker registered'))
+
+          .catch(err => console.log('ServiceWorker error: ', err));
+
+      });
+
+    }
+
+
+    // ======================================================
+    // AUTHENTICATION & PROFILE LOGIC - EXISTING
+    // ======================================================
+
+    const authScreen =
+      document.getElementById('auth-screen');
+
+    const authActionBtn =
+      document.getElementById('auth-action-btn');
+
+    const authToggleBtn =
+      document.getElementById('auth-toggle-btn');
+
+    const authSubtitle =
+      document.getElementById('auth-subtitle');
+
+    const authToggleText =
+      document.getElementById('auth-toggle-text');
+
+    const authError =
+      document.getElementById('auth-error');
+
+    const logoutBtn =
+      document.getElementById('logout-btn');
+
+    const userProfileName =
+      document.getElementById('user-profile-name');
+
+
+    let isLoginMode = true;
+
+
+    const token =
+      sessionStorage.getItem('asha_token');
+
+
+    if (token) {
+
+      authScreen.classList.add('hidden');
+
+      logoutBtn.classList.remove('hidden');
+
+      document
+        .getElementById('profileBtn')
+        .classList.remove('hidden');
+
+
+      try {
+
+        const payload =
+          JSON.parse(atob(token.split('.')[1]));
+
+        const username =
+          payload.sub || "User";
+
+        const capitalizedName =
+          username.charAt(0).toUpperCase() +
+          username.slice(1);
+
+        userProfileName.textContent =
+          `Welcome, ASHA ${capitalizedName}`;
+
+      } catch (error) {
+
+        console.error(
+          "JWT parsing error:",
+          error
+        );
+
+      }
+
+    }
+
+
+    // ======================================================
+    // LOGOUT
+    // ======================================================
+
+    logoutBtn.addEventListener('click', () => {
+
+      sessionStorage.removeItem('asha_token');
+
+      window.location.reload();
+
+    });
+
+
+    // ======================================================
+    // LOGIN / SIGNUP TOGGLE
+    // ======================================================
+
+    authToggleBtn.addEventListener('click', () => {
+
+      isLoginMode = !isLoginMode;
+
+      authActionBtn.textContent =
+        isLoginMode
+          ? 'Login'
+          : 'Create Account';
+
+      authSubtitle.textContent =
+        isLoginMode
+          ? 'Please login to continue'
+          : 'Register a new ASHA account';
+
+      authToggleText.textContent =
+        isLoginMode
+          ? "Don't have an account?"
+          : "Already have an account?";
+
+      authToggleBtn.textContent =
+        isLoginMode
+          ? 'Sign Up'
+          : 'Login';
+
+      authError.classList.add('hidden');
+
+
+      const stateContainer =
+        document.getElementById('state-container');
+
+
+      if (!isLoginMode) {
+
+        stateContainer.classList.remove('hidden');
+
+      } else {
+
+        stateContainer.classList.add('hidden');
+
+      }
+
+    });
+
+
+    // ======================================================
+    // LOGIN / SIGNUP
+    // ======================================================
+
+    authActionBtn.addEventListener('click', async () => {
+
+      const username =
+        document
+          .getElementById('auth-username')
+          .value
+          .trim();
+
+      const password =
+        document
+          .getElementById('auth-password')
+          .value
+          .trim();
+
+
+      if (!username || !password) {
+
+        authError.textContent =
+          "Please fill in all fields.";
+
+        authError.classList.remove('hidden');
+
+        return;
+
+
+      }
+
+
+      authActionBtn.textContent =
+        "Processing...";
+
+
+      try {
+
+        const endpoint =
+          isLoginMode
+            ? '/login'
+            : '/signup';
+
+
+        const response =
+          await fetch(
+            `http://127.0.0.1:8000${endpoint}`,
+            {
+              method: 'POST',
+
+              headers: {
+                'Content-Type':
+                  'application/json'
+              },
+
+              body: JSON.stringify({
+                username,
+                password
+              })
+            }
+          );
+
+
+        const data =
+          await response.json();
+
+
+        if (response.ok) {
+
+          sessionStorage.setItem(
+            'asha_token',
+            data.token
+          );
+
+          window.location.reload();
+
+        } else {
+
+          authError.textContent =
+            data.detail ||
+            "Authentication failed.";
+
+          authError.classList.remove('hidden');
+
+          authActionBtn.textContent =
+            isLoginMode
+              ? 'Login'
+              : 'Create Account';
+
+        }
+
+      } catch (error) {
+
+        authError.textContent =
+          "Server offline. Cannot verify credentials right now.";
+
+        authError.classList.remove('hidden');
+
+        authActionBtn.textContent =
+          isLoginMode
+            ? 'Login'
+            : 'Create Account';
+
+      }
+
+    });
+
+
+    // ======================================================
+    // 2. NETWORK TOGGLE - EXISTING
+    // ======================================================
+
+    const onlineUI =
+      document.getElementById('online-ui');
+
+    const offlineUI =
+      document.getElementById('offline-ui');
+
+    const statusBadge =
+      document.getElementById('status-badge');
+
+    const statusText =
+      document.getElementById('status-text');
+
+    const statusDot =
+      document.getElementById('status-dot');
+
+
+async function checkRealConnection() {
+
+  if (!navigator.onLine) {
+    return false;
+  }
+
+  try {
+
+    const controller = new AbortController();
+
+    const timeout = setTimeout(() => {
+      controller.abort();
+    }, 2000);
+
+    await fetch(
+      'http://127.0.0.1:8000/',
+      {
+        method: 'GET',
+        cache: 'no-store',
+        signal: controller.signal
+      }
+    );
+
+    clearTimeout(timeout);
+
+    return true;
+
+  } catch (error) {
+
+    return false;
+
+  }
+
+}
+
+async function updateNetworkStatus() {
+
+  const actuallyOnline = await checkRealConnection();
+
+  if (actuallyOnline) {
+
+    statusBadge.classList.remove('bg-amber-500');
+    statusBadge.classList.add('bg-emerald-500');
+
+    statusText.textContent = 'Online';
+
+    statusDot.classList.add('animate-pulse');
+
+    onlineUI.classList.remove('hidden');
+    onlineUI.classList.add('flex');
+
+    offlineUI.classList.add('hidden');
+
+  } else {
+
+    statusBadge.classList.remove('bg-emerald-500');
+    statusBadge.classList.add('bg-amber-500');
+
+    statusText.textContent = 'Offline';
+
+    statusDot.classList.remove('animate-pulse');
+
+    onlineUI.classList.remove('flex');
+    onlineUI.classList.add('hidden');
+
+    offlineUI.classList.remove('hidden');
+
+
+  }
+
+}
+window.addEventListener('online', updateNetworkStatus);
+window.addEventListener('offline', updateNetworkStatus);
+
+updateNetworkStatus();
+
+    // ======================================================
+    // 3. PREGNANCY VALIDATION - EXISTING
+    // ======================================================
+
+    const ageInput =
+      document.getElementById('p-age');
+
+    const genderSelect =
+      document.getElementById('p-gender');
+
+    const pregnantSelect =
+      document.getElementById('p-pregnant');
+
+
+    function checkPregnancyRules() {
+
+      const currentAge =
+        parseInt(ageInput.value) || 0;
+
+      const gender =
+        genderSelect.value;
+
+
+      if (
+        currentAge < 15 ||
+        gender === "Male"
+      ) {
+
+        pregnantSelect.value =
+          "No";
+
+        pregnantSelect.disabled =
+          true;
+
+        pregnantSelect.classList.add(
+          'bg-slate-100',
+          'text-slate-400'
+        );
+
+      } else {
+
+        pregnantSelect.disabled =
+          false;
+
+        pregnantSelect.classList.remove(
+          'bg-slate-100',
+          'text-slate-400'
+        );
+
+      }
+
+    }
+
+
+    ageInput.addEventListener(
+      'input',
+      checkPregnancyRules
+    );
+
+    genderSelect.addEventListener(
+      'change',
+      checkPregnancyRules
+    );
+
+
+    // ======================================================
+    // NEW: PROFILE STATE / REGION
+    // ======================================================
+
+    async function loadOfflineProfileRegion() {
+
+      const regionElement =
+        document.getElementById(
+          'offline-region'
+        );
+
+      if (!regionElement) return;
+
+
+      try {
+
+        const token =
+          sessionStorage.getItem(
+            'asha_token'
+          );
+
+
+        if (!token) {
+
+          regionElement.textContent =
+            "Profile not available";
+
+          return;
+
+        }
+
+
+        const payload =
+          JSON.parse(
+            atob(token.split('.')[1])
+          );
+
+
+        const username =
+          payload.sub;
+
+
+        if (!username) {
+
+          regionElement.textContent =
+            "Profile state unavailable";
+
+          return;
+
+        }
+
+
+        const response =
+          await fetch(
+            `http://127.0.0.1:8000/api/profile/${encodeURIComponent(username)}`
+          );
+
+
+        if (!response.ok) {
+
+          throw new Error(
+            "Profile request failed"
+          );
+
+        }
+
+
+        const profile =
+          await response.json();
+
+
+        const state =
+          profile.state ||
+          "State not saved";
+
+
+        regionElement.textContent =
+          state;
+
+
+        // Store locally so offline calculations can
+        // continue even when backend becomes unavailable.
+
+        localStorage.setItem(
+          'asha_profile_state',
+          state
+        );
+
+
+      } catch (error) {
+
+        console.warn(
+          "Could not fetch profile state:",
+          error
+        );
+
+
+        // Use previously saved local state.
+
+        const savedState =
+          localStorage.getItem(
+            'asha_profile_state'
+          );
+
+
+        regionElement.textContent =
+          savedState ||
+          "State not available";
+
+      }
+
+    }
+
+
+    // Load saved region whenever page opens.
+    loadOfflineProfileRegion();
+
+
+    // ======================================================
+    // NEW: GET SAVED STATE FOR OFFLINE ENGINE
+    // ======================================================
+
+    function getOfflineProfileState() {
+
+      return (
+        localStorage.getItem(
+          'asha_profile_state'
+        ) || ""
+      );
+
+    }
+
+
+    // ======================================================
+    // NEW: GET CHECKED SYMPTOMS
+    // ======================================================
+
+    function getSelectedSymptoms() {
+
+      return Array.from(
+        document.querySelectorAll(
+          'input[name="symptom"]:checked'
+        )
+      ).map(
+        checkbox => checkbox.value
+      );
+
+    }
+
+
+    // ======================================================
+    // NEW: GET DANGER SIGNS
+    // ======================================================
+
+    function getSelectedDangerSigns() {
+
+      return Array.from(
+        document.querySelectorAll(
+          'input[name="danger-sign"]:checked'
+        )
+      ).map(
+        checkbox => checkbox.value
+      );
+
+    }
+
+
+    // ======================================================
+    // 4. OFFLINE FORM SUBMISSION
+    // ======================================================
+
+    document
+      .getElementById('calculate-btn')
+      .addEventListener('click', () => {
+
+
+        const age =
+          parseInt(ageInput.value);
+
+
+        const gender =
+          genderSelect.value;
+
+
+        const test =
+          document.getElementById(
+            'p-test'
+          ).value;
+
+
+        const pregnant =
+          pregnantSelect.value;
+
+
+        // NEW
+        const symptoms =
+          getSelectedSymptoms();
+
+
+        // NEW
+        const dangerSigns =
+          getSelectedDangerSigns();
+
+
+        // NEW
+        const state =
+          getOfflineProfileState();
+
+
+        if (isNaN(age)) {
+
+          return alert(
+            "Please enter the patient's age."
+          );
+
+        }
+
+
+        // NEW parameters are passed to engine.
+        // Existing first four parameters remain unchanged.
+
+        const advice =
+          evaluatePatient(
+            age,
+            gender,
+            test,
+            pregnant,
+            symptoms,
+            dangerSigns,
+            state
+          );
+
+
+        document.getElementById(
+          'res-treatment'
+        ).textContent =
+          advice.treatment;
+
+
+        document.getElementById(
+          'res-action'
+        ).textContent =
+          advice.action;
+
+
+        document.getElementById(
+          'result-box'
+        ).classList.remove(
+          'hidden'
+        );
+
+
+        // NEW: region display
+
+        if (advice.region) {
+
+          document
+            .getElementById(
+              'res-region-container'
+            )
+            .classList.remove(
+              'hidden'
+            );
+
+          document
+            .getElementById(
+              'res-region'
+            )
+            .textContent =
+            `${advice.region} (${state || "State not specified"})`;
+
+        }
+
+
+        // Existing offline logging preserved,
+        // with additional information added.
+
+        saveLogOffline({
+
+          age,
+
+          gender,
+
+          test,
+
+          pregnant,
+
+          symptoms,
+
+          dangerSigns,
+
+          state,
+
+          action_taken:
+            advice.action,
+
+          treatment_given:
+            advice.treatment
+
+        })
+
+        .then(
+          msg => console.log(msg)
+        )
+
+        .catch(
+          err => console.error(err)
+        );
+
+      });
+
+
+    // ======================================================
+    // NEW: RDT LANGUAGE SWITCHER
+    // ======================================================
+
+    const rdtEnBtn =
+      document.getElementById(
+        'rdt-en-btn'
+      );
+
+    const rdtHiBtn =
+      document.getElementById(
+        'rdt-hi-btn'
+      );
+
+    const rdtGuideEn =
+      document.getElementById(
+        'rdt-guide-en'
+      );
+
+    const rdtGuideHi =
+      document.getElementById(
+        'rdt-guide-hi'
+      );
+
+
+    rdtEnBtn.addEventListener(
+      'click',
+      () => {
+
+        rdtGuideEn.classList.remove(
+          'hidden'
+        );
+
+        rdtGuideHi.classList.add(
+          'hidden'
+        );
+
+        rdtEnBtn.classList.add(
+          'bg-sky-600',
+          'text-white'
+        );
+
+        rdtEnBtn.classList.remove(
+          'bg-slate-200',
+          'text-slate-700'
+        );
+
+        rdtHiBtn.classList.remove(
+          'bg-sky-600',
+          'text-white'
+        );
+
+        rdtHiBtn.classList.add(
+          'bg-slate-200',
+          'text-slate-700'
+        );
+
+      }
+    );
+
+
+    rdtHiBtn.addEventListener(
+      'click',
+      () => {
+
+        rdtGuideHi.classList.remove(
+          'hidden'
+        );
+
+        rdtGuideEn.classList.add(
+          'hidden'
+        );
+
+        rdtHiBtn.classList.add(
+          'bg-sky-600',
+          'text-white'
+        );
+
+        rdtHiBtn.classList.remove(
+          'bg-slate-200',
+          'text-slate-700'
+        );
+
+        rdtEnBtn.classList.remove(
+          'bg-sky-600',
+          'text-white'
+        );
+
+        rdtEnBtn.classList.add(
+          'bg-slate-200',
+          'text-slate-700'
+        );
+
+      }
+    );
+
+
+    // ======================================================
+    // 5. ONLINE CHAT - EXISTING
+    // ======================================================
+
+    const chatInput =
+      document.getElementById(
+        'chat-input'
+      );
+
+    const sendBtn =
+      document.getElementById(
+        'send-btn'
+      );
+
+    const chatHistory =
+      document.getElementById(
+        'chat-history'
+      );
+
+
+    let conversationMemory = [];
+
+
+    chatInput.addEventListener(
+      'input',
+      function() {
+
+        this.style.height =
+          'auto';
+
+        this.style.height =
+          this.scrollHeight + 'px';
+
+      }
+    );
+
+
+    function appendMessage(
+      text,
+      sender
+    ) {
+
+      const msgDiv =
+        document.createElement(
+          'div'
+        );
+
+
+      msgDiv.className =
+        `p-3 rounded-2xl text-sm max-w-[85%] shadow-sm prose ${
+          sender === 'user'
+            ? 'self-end bg-sky-600 text-white rounded-tr-sm'
+            : 'self-start bg-sky-50 text-slate-800 rounded-tl-sm border border-sky-100'
+        }`;
+
+
+      if (sender === 'user') {
+
+        msgDiv.textContent =
+          text;
+
+      } else {
+
+        msgDiv.innerHTML =
+          marked.parse(text);
+
+        const strongs =
+          msgDiv.querySelectorAll(
+            'strong'
+          );
+
+        strongs.forEach(
+          s =>
+            s.style.color =
+              '#0284c7'
+        );
+
+      }
+
+
+      chatHistory.appendChild(
+        msgDiv
+      );
+
+      chatHistory.scrollTop =
+        chatHistory.scrollHeight;
+
+    }
+
+
+    sendBtn.addEventListener(
+      'click',
+      async () => {
+
+        const userText =
+          chatInput.value.trim();
+
+
+        if (!userText) return;
+
+
+        appendMessage(
+          userText,
+          'user'
+        );
+
+
+        chatInput.value =
+          '';
+
+        chatInput.style.height =
+          'auto';
+
+
+        const loader =
+          document.createElement(
+            'div'
+          );
+
+
+        loader.id =
+          'typing-indicator';
+
+
+        loader.className =
+          'self-start bg-slate-100 text-slate-500 p-3 rounded-2xl rounded-tl-sm text-sm max-w-[85%] italic flex gap-1 items-center';
+
+
+        loader.innerHTML =
+          '<span class="animate-bounce">●</span><span class="animate-bounce" style="animation-delay: 0.2s">●</span><span class="animate-bounce" style="animation-delay: 0.4s">●</span>';
+
+
+        chatHistory.appendChild(
+          loader
+        );
+
+
+        chatHistory.scrollTop =
+          chatHistory.scrollHeight;
+
+
+        try {
+
+          const response =
+            await fetch(
+              'http://127.0.0.1:8000/chat',
+              {
+                method: 'POST',
+
+                headers: {
+                  'Content-Type':
+                    'application/json'
+                },
+
+                body: JSON.stringify({
+                  message: userText,
+                  history:
+                    conversationMemory
+                })
+
+              }
+            );
+
+
+          const data =
+            await response.json();
+
+
+          const typingIndicator =
+            document.getElementById(
+              'typing-indicator'
+            );
+
+
+          if (typingIndicator) {
+            typingIndicator.remove();
+          }
+
+
+          appendMessage(
+            data.response,
+            'bot'
+          );
+
+
+          conversationMemory.push({
+            sender: 'user',
+            text: userText
+          });
+
+
+          conversationMemory.push({
+            sender: 'bot',
+            text: data.response
+          });
+
+
+          if (
+            conversationMemory.length > 6
+          ) {
+
+            conversationMemory =
+              conversationMemory.slice(
+                -6
+              );
+
+          }
+
+
+        } catch (error) {
+
+          const typingIndicator =
+            document.getElementById(
+              'typing-indicator'
+            );
+
+
+          if (typingIndicator) {
+            typingIndicator.remove();
+          }
+
+
+          appendMessage(
+            'Connection error. Please check your backend server.',
+            'bot'
+          );
+
+        }
+
+      }
+    );
+
+
+    chatInput.addEventListener(
+      'keypress',
+      (e) => {
+
+        if (
+          e.key === 'Enter' &&
+          !e.shiftKey
+        ) {
+
+          e.preventDefault();
+
+          sendBtn.click();
+
+        }
+
+      }
+    );
+
+
+    // ======================================================
+    // 6. VOICE-TO-TEXT - EXISTING
+    // ======================================================
+
+    const micBtn =
+      document.getElementById(
+        'mic-btn'
+      );
+
+
+    const SpeechRecognition =
+      window.SpeechRecognition ||
+      window.webkitSpeechRecognition;
+
+
+    if (SpeechRecognition) {
+
+      const recognition =
+        new SpeechRecognition();
+
+
+      recognition.continuous =
+        false;
+
+
+      recognition.lang =
+        'hi-IN';
+
+
+      recognition.interimResults =
+        false;
+
+
+      micBtn.addEventListener(
+        'click',
+        () => {
+
+          micBtn.classList.add(
+            'animate-pulse',
+            'bg-red-700'
+          );
+
+          recognition.start();
+
+        }
+      );
+
+
+      recognition.onresult =
+        (event) => {
+
+          const transcript =
+            event.results[0][0]
+              .transcript;
+
+
+          chatInput.value =
+            transcript;
+
+
+          chatInput.style.height =
+            'auto';
+
+
+          chatInput.style.height =
+            chatInput.scrollHeight +
+            'px';
+
+
+          micBtn.classList.remove(
+            'animate-pulse',
+            'bg-red-700'
+          );
+
+        };
+
+
+      recognition.onerror =
+        (event) => {
+
+          console.error(
+            "Speech recognition error:",
+            event.error
+          );
+
+
+          micBtn.classList.remove(
+            'animate-pulse',
+            'bg-red-700'
+          );
+
+
+          alert(
+            "Microphone error. Please make sure you granted permission!"
+          );
+
+        };
+
+
+      recognition.onspeechend =
+        () => {
+
+          recognition.stop();
+
+          micBtn.classList.remove(
+            'animate-pulse',
+            'bg-red-700'
+          );
+
+        };
+
+
+    } else {
+
+      micBtn.addEventListener(
+        'click',
+        () => {
+
+          alert(
+            "Sorry, voice typing is not supported on this browser."
+          );
+
+        }
+      );
+
+    }
+
+
+    // ======================================================
+    // PROFILE REDIRECT - EXISTING
+    // ======================================================
+
+    document
+  .getElementById('profileBtn')
+  .addEventListener(
+    'click',
+    async () => {
+
+      console.log("Checking connection before opening Profile...");
+
+      const actuallyOnline = await checkRealConnection();
+
+      if (actuallyOnline) {
+        window.location.href = 'profile.html';
+      } else {
+        window.location.href = 'index.html';
+      }
+
+    }
+  );
+
+  </script>
+
+</body>
+</html>
