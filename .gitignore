@@ -7,3 +7,7 @@ users.db
 
 .pytest_cache/
 *.log
+
+audit.db
+.pytest_cache/
+*.log
