@@ -6,7 +6,7 @@ import bcrypt
 import jwt
 from pydantic import BaseModel
 from datetime import datetime, timedelta, timezone
-from fastapi import HTTPException, Depends, Header
+from fastapi import HTTPException, Depends, Header, Request
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -25,7 +25,7 @@ import math
 from collections import Counter
 from sentence_transformers import CrossEncoder
 from typing import Optional, List
-
+import json
 # --- Security Modules ---
 from security import (
     init_crypto, get_field_encryptor, get_profile_encryptor, get_consent_encryptor,
@@ -201,6 +201,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+
 def init_profile_db():
     conn = sqlite3.connect("users.db")
     c = conn.cursor()
@@ -350,7 +352,24 @@ def login(user: UserAuth):
             status_code=401,
             detail="Invalid username or password."
         )
-    
+
+
+
+
+# --- Health and Root Routes (Public) ---
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+@app.get("/")
+def root():
+    return {"status": "Asha Vaani backend running"}
+
+# Groq client compatibility - silence /v1/models 404 noise
+@app.get("/v1/models")
+def list_models():
+    return {"object": "list", "data": []}
+
 #add the routes that your frontend PWA will call to fetch or update this data
 @app.get("/api/profile/{worker_id}")
 def get_profile(worker_id: str, user: dict = Depends(require_own_worker_or_role())):
@@ -359,7 +378,7 @@ def get_profile(worker_id: str, user: dict = Depends(require_own_worker_or_role(
     c.execute("SELECT name, state,district, village, sub_center FROM asha_profiles WHERE worker_id=?", (worker_id,))
     row = c.fetchone()
     
-   
+
 
     if row:
         return {
@@ -401,11 +420,17 @@ def init_db():
         CREATE TABLE IF NOT EXISTS chat_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp TEXT,
+            user_id TEXT,
             user_message TEXT,
             bot_response TEXT,
             feedback INTEGER DEFAULT 0  -- 1 for thumbs up, -1 for thumbs down
         )
     """)
+    # Migration: add user_id column if missing
+    try:
+        cursor.execute("ALTER TABLE chat_logs ADD COLUMN user_id TEXT")
+    except:
+        pass
     conn.commit()
     conn.close()
 
@@ -861,9 +886,89 @@ def build_retrieval_query(user_msg: str, history: list) -> str:
         return f"{last_bot_msg} {user_msg}"
     return user_msg
 
+from fastapi import File, UploadFile, Form
+
+
+# Custom dependency for parsing chat requests
+async def parse_chat_request(request: Request):
+    """Parse chat request handling both JSON and form-data."""
+    content_type = request.headers.get("content-type", "")
+    body = await request.body()
+    
+    message = None
+    history = []
+    file = None
+    file_type = None
+    
+    if "application/json" in content_type:
+        try:
+            import json as json_module
+            json_body = json.loads(body.decode())
+            message = json_body.get("message")
+            history = json_body.get("history", [])
+        except Exception as e:
+            print(f"JSON parse error: {e}")
+    elif "multipart/form-data" in content_type:
+        try:
+            form = await request.form()
+            message = form.get("message")
+            history = form.get("history", "[]")
+            file = form.get("file")
+            file_type = form.get("file_type")
+        except Exception as e:
+            print(f"Multipart form parse error: {e}")
+    elif "application/x-www-form-urlencoded" in content_type:
+        try:
+            form = await request.form()
+            message = form.get("message")
+            history = form.get("history", "[]")
+            file = form.get("file")
+            file_type = form.get("file_type")
+        except Exception as e:
+            print(f"Form parse error: {e}")
+    
+    if message is None:
+        raise HTTPException(status_code=422, detail="Message is required")
+    
+    # Parse history from JSON string if it's a string
+    if isinstance(history, str):
+        try:
+            history = json.loads(history)
+        except:
+            history = []
+    
+    return {
+        "message": message,
+        "history": history,
+        "file": file,
+        "file_type": file_type
+    }
+
+
+async def parse_chat_request_dep(request: Request) -> dict:
+    """FastAPI dependency for parsing chat requests."""
+    return await parse_chat_request(request)
+
+
+# Update the chat endpoint to use the dependency
+
+
 @app.post("/chat")
-async def chat_with_rag(chat_input: ChatInput, user: dict = Depends(get_current_user)):
-    user_msg = chat_input.message
+async def chat_with_rag(
+    user: dict = Depends(get_current_user),
+    parsed: dict = Depends(parse_chat_request_dep)
+):
+    message = parsed["message"]
+    history = parsed["history"]
+    file = parsed["file"]
+    file_type = parsed["file_type"]
+    user_msg = message
+    
+    # Parse history from JSON string
+    try:
+        chat_history_parsed = json.loads(history)
+    except:
+        chat_history_parsed = []
 
     # Consent check
     conn = sqlite3.connect("users.db")
@@ -889,7 +994,7 @@ async def chat_with_rag(chat_input: ChatInput, user: dict = Depends(get_current_
         AuditEventType.CHAT_QUERY,
         principal_id=user["username"],
         principal_role=user["role"],
-        payload={"query_hash": hashlib.sha256(chat_input.message.encode()).hexdigest()[:16]},
+        payload={"query_hash": hashlib.sha256(user_msg.encode()).hexdigest()[:16]},
     )
 
     try:
@@ -898,7 +1003,7 @@ async def chat_with_rag(chat_input: ChatInput, user: dict = Depends(get_current_
                 # --- EXACT PDF FILENAME FETCHER ---
         retrieval_query = build_retrieval_query(
             user_msg,
-            chat_input.history
+            chat_history_parsed         
         )
 
         retrieval_query = understand_query_for_retrieval(
@@ -1441,7 +1546,7 @@ You must NOT:
         messages = [SystemMessage(content=system_prompt)]
         
         # 2. Add the past conversational history
-        for past_msg in chat_input.history:
+        for past_msg in chat_history_parsed:
             if past_msg["sender"] == "user":
                 messages.append(HumanMessage(content=past_msg["text"]))
             elif past_msg["sender"] == "bot":
@@ -1466,12 +1571,19 @@ You must NOT:
         encrypted_user_msg = field_encryptor.encrypt(user_msg, f"chat:{user['username']}")
         
         # Save conversation to SQLite with encrypted user_message
+        # Include file info if attachment was sent
+        file_info = None
+        if file:
+            file_info = f"[Attached: {file.filename} ({file_type})] "
+        
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # Store combined message with file info
+        full_message = file_info + user_msg if file_info else user_msg
         cursor.execute(
-            "INSERT INTO chat_logs (timestamp, user_message, bot_response) VALUES (?, ?, ?)",
-            (now, encrypted_user_msg, bot_reply)
+            "INSERT INTO chat_logs (timestamp, user_id, user_message, bot_response) VALUES (?, ?, ?, ?)",
+            (now, user["username"], field_encryptor.encrypt(full_message, f"chat:{user['username']}"), bot_reply)
         )
         conn.commit()
         log_id = cursor.lastrowid
@@ -1485,7 +1597,11 @@ You must NOT:
             payload={"response_hash": hashlib.sha256(bot_reply.encode()).hexdigest()[:16], "log_id": log_id},
         )
 
-        return {"response": bot_reply, "log_id": log_id}
+        response_data = {"response": bot_reply, "log_id": log_id}
+        if file:
+            response_data["file_processed"] = True
+            response_data["file_name"] = file.filename
+        return response_data
 
     except Exception as e:
         return {"response": f"Backend processing error: {str(e)}", "log_id": None}
@@ -1505,6 +1621,69 @@ async def log_feedback(feedback_data: FeedbackInput):
         return {"status": "success"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+
+# --- Chat History Endpoint ---
+MAX_CHAT_HISTORY = 10
+
+@app.get("/api/chat/history")
+def get_chat_history(user: dict = Depends(get_current_user)):
+    """Get last MAX_CHAT_HISTORY chats for the current user."""
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT id, timestamp, user_message, bot_response FROM chat_logs WHERE user_id = ? ORDER BY timestamp DESC LIMIT ?",
+        (user["username"], MAX_CHAT_HISTORY)
+    )
+    rows = cursor.fetchall()
+    conn.close()
+    
+    # Decrypt user messages for display
+    field_encryptor = get_field_encryptor()
+    history = []
+    for row in rows:
+        try:
+            decrypted = field_encryptor.decrypt(row[2], f"chat:{user['username']}")
+        except:
+            decrypted = "[encrypted]"
+        history.append({
+            "id": row[0],
+            "timestamp": row[1],
+            "title": decrypted[:50] + ("..." if len(decrypted) > 50 else ""),
+            "user_message": decrypted,
+            "bot_response": row[3]
+        })
+    return {"history": history}
+
+
+@app.get("/api/chat/history/{chat_id}")
+def get_chat_detail(chat_id: int, user: dict = Depends(get_current_user)):
+    """Get a single chat by ID with full conversation for the current user."""
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT id, timestamp, user_message, bot_response FROM chat_logs WHERE id = ? AND user_id = ?",
+        (chat_id, user["username"])
+    )
+    row = cursor.fetchone()
+    conn.close()
+    
+    if not row:
+        raise HTTPException(status_code=404, detail="Chat not found")
+    
+    # Decrypt user message
+    field_encryptor = get_field_encryptor()
+    try:
+        decrypted = field_encryptor.decrypt(row[2], f"chat:{user['username']}")
+    except:
+        decrypted = "[encrypted]"
+    
+    return {
+        "id": row[0],
+        "timestamp": row[1],
+        "user_message": decrypted,
+        "bot_response": row[3]
+    }
 
 
 # --- Consent Endpoints ---

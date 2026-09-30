@@ -286,14 +286,27 @@
           </p>
         </div>
 
-        <button
-          id="history-close-btn"
-          type="button"
-          aria-label="Close history"
-          class="w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 active:scale-95 transition-all"
-        >
-          ✕
-        </button>
+        <div class="flex items-center gap-2">
+          <button
+            id="new-chat-btn"
+            type="button"
+            aria-label="New Chat"
+            class="w-9 h-9 flex items-center justify-center rounded-full bg-sky-100 text-sky-600 hover:bg-sky-200 active:scale-95 transition-all"
+            title="New Chat"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14M5 12h14"></path>
+            </svg>
+          </button>
+          <button
+            id="history-close-btn"
+            type="button"
+            aria-label="Close history"
+            class="w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 active:scale-95 transition-all"
+          >
+            ✕
+          </button>
+        </div>
 
       </div>
 
@@ -348,34 +361,80 @@
         class="relative bg-white/90 backdrop-blur-xl p-2 rounded-3xl shadow-lg border border-sky-100 flex items-end gap-2 focus-within:ring-2 focus-within:ring-sky-200 transition-all"
       >
 
-        <!-- ADD / CAMERA BUTTON -->
-        <button
-          id="add-media-btn"
-          type="button"
-          aria-label="Add photo"
-          class="w-11 h-11 flex items-center justify-center rounded-full bg-orange-50 text-orange-500 border border-orange-100 hover:bg-orange-100 active:scale-95 transition-all flex-shrink-0 mb-0.5"
-        >
-          <svg
-            class="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <!-- ADD / CAMERA BUTTON WITH ATTACHMENT MENU -->
+        <div class="relative">
+          <button
+            id="add-media-btn"
+            type="button"
+            aria-label="Add attachment"
+            class="w-11 h-11 flex items-center justify-center rounded-full bg-orange-50 text-orange-500 border border-orange-100 hover:bg-orange-100 active:scale-95 transition-all flex-shrink-0 mb-0.5"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 5v14M5 12h14"
-            ></path>
-          </svg>
-        </button>
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 5v14M5 12h14"
+              ></path>
+            </svg>
+          </button>
 
-        <!-- HIDDEN PHOTO INPUT - UI ONLY FOR NOW -->
+          <!-- ATTACHMENT MENU -->
+          <div id="attachment-menu" class="hidden absolute bottom-full left-0 mb-2 w-56 bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-50">
+            <div class="px-4 py-2 border-b border-slate-100">
+              <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Attachments</p>
+            </div>
+            <button
+              type="button"
+              id="attach-document-btn"
+              class="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-sky-50 transition-colors"
+            >
+              <svg class="w-5 h-5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+              </svg>
+              <span>📄 Add Document</span>
+            </button>
+            <button
+              type="button"
+              id="attach-camera-btn"
+              class="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-sky-50 transition-colors"
+            >
+              <svg class="w-5 h-5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.2A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.2A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              </svg>
+              <span>📷 Camera</span>
+            </button>
+            <button
+              type="button"
+              id="attach-files-btn"
+              class="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-sky-50 transition-colors"
+            >
+              <svg class="w-5 h-5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+              </svg>
+              <span>🖼 Files</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- HIDDEN INPUTS -->
         <input
           id="chat-image-input"
           type="file"
           accept="image/*"
           capture="environment"
+          class="hidden"
+        >
+        <input
+          id="chat-document-input"
+          type="file"
+          accept=".pdf,.doc,.docx,.txt"
           class="hidden"
         >
 
@@ -1345,11 +1404,44 @@
     const historyDrawer = document.getElementById("history-drawer");
     const historyCloseBtn = document.getElementById("history-close-btn");
     const historyBackdrop = document.getElementById("history-backdrop");
+    const recentQuestionsList = document.getElementById("recent-questions-list");
+
+    async function loadChatHistory() {
+      if (!recentQuestionsList) return;
+      try {
+        const token = sessionStorage.getItem('asha_token');
+        if (!token) {
+          recentQuestionsList.innerHTML = '<p class="text-sm text-slate-400 text-center py-8">Please login to view history</p>';
+          return;
+        }
+        const res = await fetch('http://127.0.0.1:8000/api/chat/history', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) {
+          recentQuestionsList.innerHTML = '<p class="text-sm text-slate-400 text-center py-8">Failed to load history</p>';
+          return;
+        }
+        const data = await res.json();
+        if (!data.history || data.history.length === 0) {
+          recentQuestionsList.innerHTML = '<p class="text-sm text-slate-400 text-center py-8">No chat history yet</p>';
+          return;
+        }
+        recentQuestionsList.innerHTML = data.history.map(item => `
+          <button class="w-full text-left p-3 bg-white rounded-lg border border-slate-200 hover:bg-sky-50 transition-colors text-sm" onclick="loadChatFromHistory(${item.id})">
+            <p class="font-medium text-slate-800 truncate">${item.title}</p>
+            <p class="text-xs text-slate-400 mt-1">${new Date(item.timestamp).toLocaleString()}</p>
+          </button>
+        `).join('');
+      } catch (e) {
+        recentQuestionsList.innerHTML = '<p class="text-sm text-slate-400 text-center py-8">Error loading history</p>';
+      }
+    }
 
     function openHistoryDrawer() {
       if (!historyDrawer) return;
       historyDrawer.classList.remove("hidden");
       document.body.classList.add("overflow-hidden");
+      loadChatHistory();
     }
 
     function closeHistoryDrawer() {
@@ -1357,12 +1449,40 @@
       historyDrawer.classList.add("hidden");
       document.body.classList.remove("overflow-hidden");
     }
+    historyMenuBtn?.addEventListener(
+  'click',
+  openHistoryDrawer
+);
 
-    historyMenuBtn?.addEventListener("click", openHistoryDrawer);
-    historyCloseBtn?.addEventListener("click", closeHistoryDrawer);
-    historyBackdrop?.addEventListener("click", closeHistoryDrawer);
+historyCloseBtn?.addEventListener(
+  'click',
+  closeHistoryDrawer
+);
+
+historyBackdrop?.addEventListener(
+  'click',
+  closeHistoryDrawer
+);
 
 
+  // ======================================================
+// NEW CHAT
+// ======================================================
+
+document.getElementById('new-chat-btn')?.addEventListener('click', () => {
+
+  chatHistory.innerHTML = `
+    <div class="self-start bg-sky-50 text-slate-800 p-3 rounded-2xl rounded-tl-sm text-sm max-w-[85%] shadow-sm border border-sky-100 prose">
+      <p>
+        Namaste! Aaj malaria ya ASHA duties ke baare mein kya janna chahti hain?
+      </p>
+    </div>
+  `;
+
+  conversationMemory = [];
+
+  closeHistoryDrawer();
+});
     // ======================================================
     // 1. SERVICE WORKER - EXISTING
     // ======================================================
@@ -1840,7 +1960,8 @@ updateNetworkStatus();
 
         const response =
           await fetch(
-            `http://127.0.0.1:8000/api/profile/${encodeURIComponent(username)}`
+            `http://127.0.0.1:8000/api/profile/${encodeURIComponent(username)}`,
+            { headers: authHeaders() }
           );
 
 
@@ -1902,6 +2023,229 @@ updateNetworkStatus();
 
     // Load saved region whenever page opens.
     loadOfflineProfileRegion();
+
+    // --- Auth helper ---
+    function authHeaders(extra = {}) {
+      const t = sessionStorage.getItem('asha_token');
+      return t ? { ...extra, 'Authorization': 'Bearer ' + t } : extra;
+    }
+
+    // --- Consent popup ---
+    function showConsentPopup(consentData, pendingMessage) {
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 z-[200] bg-slate-900/60 flex items-center justify-center p-4';
+      modal.innerHTML = `
+        <div class="bg-white max-w-md w-full rounded-2xl p-6">
+          <h3 class="text-lg font-bold text-slate-800 mb-2">Consent Required</h3>
+          <p class="text-sm text-slate-600 mb-4">${consentData.message}</p>
+          <div class="space-y-2 max-h-60 overflow-y-auto mb-4">
+            ${consentData.consent_categories.map(cat => `
+              <label class="flex items-center gap-2 p-2 bg-slate-50 rounded-lg text-sm cursor-pointer">
+                <input type="checkbox" name="consent_cat" value="${cat.id}" ${cat.required ? 'checked disabled' : ''} class="rounded text-sky-600">
+                <span class="${cat.required ? 'text-slate-700' : 'text-slate-600'}">${cat.title}</span>
+                ${cat.required ? '<span class="text-xs text-amber-600 ml-auto">Required</span>' : ''}
+              </label>
+            `).join('')}
+          </div>
+          <button id="consent-accept" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 rounded-lg transition-colors">
+            Accept & Continue
+          </button>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      document.getElementById('consent-accept').onclick = async () => {
+        const granted = {};
+        modal.querySelectorAll('input[name="consent_cat"]').forEach(cb => {
+          granted[cb.value] = cb.checked;
+        });
+        // Required ones are always true
+        consentData.consent_categories.filter(c => c.required).forEach(c => {
+          granted[c.id] = true;
+        });
+
+        try {
+          const res = await fetch('http://127.0.0.1:8000/api/consent', {
+            method: 'POST',
+            headers: authHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify(granted)
+          });
+          if (res.ok) {
+            modal.remove();
+            // Retry the original message
+            sendChatMessage(pendingMessage);
+          } else {
+            alert('Failed to save consent. Please try again.');
+          }
+        } catch (e) {
+          alert('Error saving consent.');
+        }
+      };
+    }
+
+    // Extract chat send logic to reusable function 
+async function sendChatMessage(userText) { 
+  // Clear input immediately 
+  chatInput.value = ''; 
+  chatInput.style.height = 'auto'; 
+
+  // Check for pending attachment 
+  const attachment = window.pendingAttachment; 
+  window.pendingAttachment = null; 
+
+  // Show user message with attachment preview if present 
+  appendMessage(
+    userText,
+    'user',
+    attachment
+      ? {
+          type: attachment.type,
+          name: attachment.file.name,
+          preview: attachment.type === 'image'
+            ? URL.createObjectURL(attachment.file)
+            : null
+        }
+      : null
+  );
+
+  conversationMemory.push({
+    sender: 'user',
+    text: userText
+  });
+
+  // Show typing indicator AFTER user message
+  const typingIndicator = document.createElement('div');
+  typingIndicator.id = 'typing-indicator';
+  typingIndicator.className = 'self-start bg-slate-100 text-slate-500 p-3 rounded-2xl rounded-tl-sm text-sm max-w-[85%] italic flex gap-1 items-center';
+  typingIndicator.innerHTML =
+    '<span class="animate-bounce">●</span>' +
+    '<span class="animate-bounce" style="animation-delay: 0.2s">●</span>' +
+    '<span class="animate-bounce" style="animation-delay: 0.4s">●</span>';
+
+  chatHistory.appendChild(typingIndicator);
+  chatHistory.scrollTop = chatHistory.scrollHeight;
+
+  
+      try {
+        // Prepare request body
+        let body;
+        let headers = authHeaders();
+
+        if (attachment) {
+          // Send as multipart/form-data for file upload
+          const formData = new FormData();
+          formData.append('message', userText);
+          formData.append('history', JSON.stringify(conversationMemory));
+          formData.append('file', attachment.file);
+          formData.append('file_type', attachment.type);
+          
+          // Remove Content-Type to let browser set it with boundary
+          delete headers['Content-Type'];
+          
+          body = formData;
+        } else {
+          headers = authHeaders({ 'Content-Type': 'application/json' });
+          body = JSON.stringify({ message: userText, history: conversationMemory });
+        }
+
+        const response = await fetch('http://127.0.0.1:8000/chat', {
+          method: 'POST',
+          headers: headers,
+          body: body
+        });
+
+        if (response.status === 401) {
+          sessionStorage.removeItem('asha_token');
+          alert('Session expired. Please login again.');
+          window.location.reload();
+          return;
+        }
+
+        const data = await response.json();
+
+        if (data.consent_required) {
+          showConsentPopup(data, userText);
+          return;
+        }
+
+        if (typingIndicator) typingIndicator.remove();
+        appendMessage(data.response, 'bot');
+        conversationMemory.push({ sender: 'bot', text: data.response });
+        if (conversationMemory.length > 6) {
+          conversationMemory = conversationMemory.slice(-6);
+        }
+
+        // Remove attachment preview after successful send
+        const preview = document.getElementById('attachment-preview');
+        if (preview) preview.remove();
+
+      } catch (error) {
+        if (typingIndicator) typingIndicator.remove();
+        appendMessage('Connection error. Please check your backend server.', 'bot');
+      }
+    }
+
+
+    // --- Load previous chat from history ---
+    async function loadChatFromHistory(chatId) {
+      if (!chatHistory || !chatInput) return;
+      
+      try {
+        const token = sessionStorage.getItem('asha_token');
+        if (!token) {
+          alert('Please login to view chat');
+          return;
+        }
+
+        // Show loading indicator
+        chatHistory.innerHTML = '';
+        const loader = document.createElement('div');
+        loader.id = 'typing-indicator';
+        loader.className = 'self-start bg-slate-100 text-slate-500 p-3 rounded-2xl rounded-tl-sm text-sm max-w-[85%] italic flex gap-1 items-center';
+        loader.innerHTML = '<span class="animate-bounce">●</span><span class="animate-bounce" style="animation-delay: 0.2s">●</span><span class="animate-bounce" style="animation-delay: 0.4s">●</span>';
+        chatHistory.appendChild(loader);
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+
+        const res = await fetch(`http://127.0.0.1:8000/api/chat/history/${chatId}`, {
+          headers: authHeaders()
+        });
+
+        if (res.status === 401) {
+          sessionStorage.removeItem('asha_token');
+          alert('Session expired. Please login again.');
+          window.location.reload();
+          return;
+        }
+
+        if (!res.ok) {
+          chatHistory.innerHTML = '<p class="text-sm text-red-500 text-center py-4">Failed to load chat</p>';
+          return;
+        }
+
+        const chat = await res.json();
+
+        // Clear chat history and load this conversation
+        chatHistory.innerHTML = '';
+        
+        // Show user message
+        appendMessage(chat.user_message, 'user');
+        
+        // Show bot response
+        appendMessage(chat.bot_response, 'bot');
+
+        // Initialize conversation memory with this chat
+        conversationMemory = [
+          { sender: 'user', text: chat.user_message },
+          { sender: 'bot', text: chat.bot_response }
+        ];
+
+        // Close history drawer if open
+        closeHistoryDrawer();
+
+      } catch (error) {
+        chatHistory.innerHTML = '<p class="text-sm text-red-500 text-center py-4">Error loading chat</p>';
+      }
+    }
 
 
     // ======================================================
@@ -2217,6 +2561,7 @@ updateNetworkStatus();
 
     let conversationMemory = [];
 
+  
 
     chatInput.addEventListener(
       'input',
@@ -2230,11 +2575,50 @@ updateNetworkStatus();
 
       }
     );
+    
+chatInput.addEventListener(
+  'keydown',
+  (event) => {
+
+    if (
+      event.key === 'Enter' &&
+      !event.shiftKey
+    ) {
+
+      event.preventDefault();
+
+      const userText =
+        chatInput.value.trim();
+
+      if (!userText) return;
+
+      sendChatMessage(userText);
+
+    }
+  }
+);
+
+    sendBtn.addEventListener(
+  'click',
+  () => {
+
+    const userText =
+      chatInput.value.trim();
+
+    if (!userText) return;
+
+    sendChatMessage(userText);
+
+  }
+);
 
 
-    function appendMessage(
+
+
+      function appendMessage(
       text,
-      sender
+      sender,
+      attachment = null
     ) {
 
       const msgDiv =
@@ -2248,13 +2632,36 @@ updateNetworkStatus();
           sender === 'user'
             ? 'self-end bg-sky-600 text-white rounded-tr-sm'
             : 'self-start bg-sky-50 text-slate-800 rounded-tl-sm border border-sky-100'
-        }`;
+          }`;
 
 
       if (sender === 'user') {
-
-        msgDiv.textContent =
-          text;
+        // Build user message content with optional attachment
+        let content = '';
+        
+        // Add attachment preview if present
+        if (attachment) {
+          if (attachment.type === 'image' && attachment.preview) {
+            content += '<img src="' + attachment.preview + '" alt="' + attachment.name + '" class="w-24 h-24 object-cover rounded mb-2">';
+          } else if (attachment.type === 'document') {
+            content += `
+              <div class="flex items-center gap-2 p-2 bg-white/20 rounded-lg mb-2">
+                <svg class="w-6 h-6 text-white/80 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                </svg>
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs font-medium truncate">' + attachment.name + '</p>
+                  <p class="text-[10px] opacity-70">Document</p>
+                </div>
+              </div>
+            `;
+          }
+        }
+        
+        // Add text content
+        content += '<div class="prose">' + text + '</div>';
+        
+        msgDiv.innerHTML = content;
 
       } else {
 
@@ -2283,169 +2690,6 @@ updateNetworkStatus();
         chatHistory.scrollHeight;
 
     }
-
-
-    sendBtn.addEventListener(
-      'click',
-      async () => {
-
-        const userText =
-          chatInput.value.trim();
-
-
-        if (!userText) return;
-
-
-        appendMessage(
-          userText,
-          'user'
-        );
-
-
-        chatInput.value =
-          '';
-
-        chatInput.style.height =
-          'auto';
-
-
-        const loader =
-          document.createElement(
-            'div'
-          );
-
-
-        loader.id =
-          'typing-indicator';
-
-
-        loader.className =
-          'self-start bg-slate-100 text-slate-500 p-3 rounded-2xl rounded-tl-sm text-sm max-w-[85%] italic flex gap-1 items-center';
-
-
-        loader.innerHTML =
-          '<span class="animate-bounce">●</span><span class="animate-bounce" style="animation-delay: 0.2s">●</span><span class="animate-bounce" style="animation-delay: 0.4s">●</span>';
-
-
-        chatHistory.appendChild(
-          loader
-        );
-
-
-        chatHistory.scrollTop =
-          chatHistory.scrollHeight;
-
-
-        try {
-
-          const response =
-            await fetch(
-              'http://127.0.0.1:8000/chat',
-              {
-                method: 'POST',
-
-                headers: {
-                  'Content-Type':
-                    'application/json'
-                },
-
-                body: JSON.stringify({
-                  message: userText,
-                  history:
-                    conversationMemory
-                })
-
-              }
-            );
-
-
-          const data =
-            await response.json();
-
-
-          const typingIndicator =
-            document.getElementById(
-              'typing-indicator'
-            );
-
-
-          if (typingIndicator) {
-            typingIndicator.remove();
-          }
-
-
-          appendMessage(
-            data.response,
-            'bot'
-          );
-
-
-          conversationMemory.push({
-            sender: 'user',
-            text: userText
-          });
-
-
-          conversationMemory.push({
-            sender: 'bot',
-            text: data.response
-          });
-
-
-          if (
-            conversationMemory.length > 6
-          ) {
-
-            conversationMemory =
-              conversationMemory.slice(
-                -6
-              );
-
-          }
-
-
-        } catch (error) {
-
-          const typingIndicator =
-            document.getElementById(
-              'typing-indicator'
-            );
-
-
-          if (typingIndicator) {
-            typingIndicator.remove();
-          }
-
-
-          appendMessage(
-            'Connection error. Please check your backend server.',
-            'bot'
-          );
-
-        }
-
-      }
-    );
-
-
-    chatInput.addEventListener(
-      'keypress',
-      (e) => {
-
-        if (
-          e.key === 'Enter' &&
-          !e.shiftKey
-        ) {
-
-          e.preventDefault();
-
-          sendBtn.click();
-
-        }
-
-      }
-    );
-
 
     // ======================================================
     // 6. VOICE-TO-TEXT - EXISTING
@@ -2480,19 +2724,46 @@ updateNetworkStatus();
         false;
 
 
-      micBtn.addEventListener(
-        'click',
-        () => {
+     let recognitionActive = false;
 
-          micBtn.classList.add(
-            'animate-pulse',
-            'bg-red-700'
-          );
+micBtn.addEventListener(
+  'click',
+  () => {
 
-          recognition.start();
+    if (recognitionActive) {
 
-        }
-      );
+      recognition.stop();
+
+      return;
+
+    }
+
+    micBtn.classList.add(
+      'animate-pulse',
+      'bg-red-700'
+    );
+
+    try {
+
+      recognition.start();
+
+    } catch (error) {
+
+      if (
+        error.name !== 'InvalidStateError'
+      ) {
+
+        console.error(
+          'Speech recognition start error:',
+          error
+        );
+
+      }
+
+    }
+
+  }
+);
 
 
       recognition.onresult =
@@ -2547,16 +2818,26 @@ updateNetworkStatus();
 
 
       recognition.onspeechend =
-        () => {
+  () => {
 
-          recognition.stop();
+    if (recognitionActive) {
 
-          micBtn.classList.remove(
-            'animate-pulse',
-            'bg-red-700'
-          );
+      recognition.stop();
 
-        };
+    }
+
+  };
+
+  recognition.onend = () => {
+
+  recognitionActive = false;
+
+  micBtn.classList.remove(
+    'animate-pulse',
+    'bg-red-700'
+  );
+
+};
 
 
     } else {

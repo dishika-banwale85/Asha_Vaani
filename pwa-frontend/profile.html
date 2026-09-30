@@ -118,6 +118,12 @@
     <script>
 const BACKEND_URL = "http://127.0.0.1:8000";
 
+        // --- Auth helper ---
+        function authHeaders(extra = {}) {
+          const t = sessionStorage.getItem('asha_token');
+          return t ? { ...extra, 'Authorization': 'Bearer ' + t } : extra;
+        }
+
         // --- DOM Elements ---
         const stateSelect = document.getElementById('ui-state-select');
         const districtSelect = document.getElementById('ui-district-select');
@@ -270,7 +276,7 @@ const BACKEND_URL = "http://127.0.0.1:8000";
             try {
                 const res = await fetch(`${BACKEND_URL}/api/profile/update`, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: authHeaders({ "Content-Type": "application/json" }),
                     body: JSON.stringify({
                         worker_id: username, name: name, state: stateSelect.value, district: districtSelect.value,
                         village: villageSelect.value, sub_center: subcenterInput.value
@@ -327,7 +333,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Profile.js ya html file script me
 async function loadSavedProfile(username) {
     try {
-        const res = await fetch(`${BACKEND_URL}/api/profile/${username}`);
+        const res = await fetch(`${BACKEND_URL}/api/profile/${username}`, { headers: authHeaders() });
 
         if (!res.ok) {
             console.log("No saved profile found.");
