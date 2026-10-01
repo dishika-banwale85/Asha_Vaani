@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+pydantic
+bcrypt
+PyJWT
+langchain-chroma
+langchain-huggingface
+langchain-groq
+langchain-google-genai
+langchain-ollama
+langchain-core
+python-dotenv
+requests
+sentence-transformers

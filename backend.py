@@ -26,6 +26,11 @@ from collections import Counter
 from sentence_transformers import CrossEncoder
 from typing import Optional, List
 import json
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+
+
 # --- Security Modules ---
 from security import (
     init_crypto, get_field_encryptor, get_profile_encryptor, get_consent_encryptor,
@@ -2145,3 +2150,16 @@ def sync_gov_data():
             
     except Exception as e:
         return {"status": "Code Error", "detail": str(e)}
+
+
+        # ==========================================
+# SERVE ASHA VAANI FRONTEND
+# ==========================================
+
+FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "pwa-frontend")
+
+app.mount(
+    "/",
+    StaticFiles(directory=FRONTEND_DIR, html=True),
+    name="frontend"
+)
