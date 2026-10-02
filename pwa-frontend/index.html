@@ -1396,6 +1396,12 @@
 
   <script>
 
+    const BACKEND_URL =
+  (window.location.hostname === "127.0.0.1" ||
+   window.location.hostname === "localhost")
+    ? "http://127.0.0.1:8000"
+    : "https://ashavaani-production.up.railway.app";
+
     // ======================================================
     // RECENT QUESTIONS DRAWER
     // ======================================================
@@ -1414,9 +1420,9 @@
           recentQuestionsList.innerHTML = '<p class="text-sm text-slate-400 text-center py-8">Please login to view history</p>';
           return;
         }
-        const res = await fetch('http://127.0.0.1:8000/api/chat/history', {
-          headers: { 'Authorization': 'Bearer ' + token }
-        });
+const res = await fetch(`${BACKEND_URL}/api/chat/history`, {
+  headers: { 'Authorization': 'Bearer ' + token }
+});
         if (!res.ok) {
           recentQuestionsList.innerHTML = '<p class="text-sm text-slate-400 text-center py-8">Failed to load history</p>';
           return;
@@ -1683,7 +1689,7 @@ document.getElementById('new-chat-btn')?.addEventListener('click', () => {
 
         const response =
           await fetch(
-            `http://127.0.0.1:8000${endpoint}`,
+            `${BACKEND_URL}${endpoint}`,
             {
               method: 'POST',
 
@@ -1780,7 +1786,7 @@ async function checkRealConnection() {
     }, 2000);
 
     await fetch(
-      'http://127.0.0.1:8000/',
+      `${BACKEND_URL}/`,
       {
         method: 'GET',
         cache: 'no-store',
@@ -1960,7 +1966,7 @@ updateNetworkStatus();
 
         const response =
           await fetch(
-            `http://127.0.0.1:8000/api/profile/${encodeURIComponent(username)}`,
+`${BACKEND_URL}/api/profile/${encodeURIComponent(username)}`,
             { headers: authHeaders() }
           );
 
@@ -2065,8 +2071,8 @@ updateNetworkStatus();
         });
 
         try {
-          const res = await fetch('http://127.0.0.1:8000/api/consent', {
-            method: 'POST',
+const res = await fetch(`${BACKEND_URL}/api/consent`, {
+              method: 'POST',
             headers: authHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify(granted)
           });
@@ -2148,8 +2154,8 @@ async function sendChatMessage(userText) {
           body = JSON.stringify({ message: userText, history: conversationMemory });
         }
 
-        const response = await fetch('http://127.0.0.1:8000/chat', {
-          method: 'POST',
+const response = await fetch(`${BACKEND_URL}/chat`, { 
+            method: 'POST',
           headers: headers,
           body: body
         });
@@ -2206,8 +2212,8 @@ async function sendChatMessage(userText) {
         chatHistory.appendChild(loader);
         chatHistory.scrollTop = chatHistory.scrollHeight;
 
-        const res = await fetch(`http://127.0.0.1:8000/api/chat/history/${chatId}`, {
-          headers: authHeaders()
+        const res = await fetch(`${BACKEND_URL}/api/chat/history`, {
+            headers: authHeaders()
         });
 
         if (res.status === 401) {
