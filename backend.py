@@ -452,7 +452,7 @@ class FeedbackInput(BaseModel):
 # --- RAG Setup ---
 embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 vectorstore = Chroma(
-    persist_directory="./chroma_db",
+    persist_directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), "chroma_db"),
     embedding_function=embeddings
 )
 # Change k=3 to k=6 so it doesn't miss your text file!

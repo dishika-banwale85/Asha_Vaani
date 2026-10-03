@@ -5,6 +5,9 @@ bcrypt
 PyJWT
 langchain-chroma
 langchain-huggingface
+langchain-community
+langchain-text-splitters
+pypdf
 langchain-groq
 langchain-google-genai
 langchain-core
