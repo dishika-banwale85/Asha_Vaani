@@ -7,7 +7,6 @@ langchain-chroma
 langchain-huggingface
 langchain-groq
 langchain-google-genai
-langchain-ollama
 langchain-core
 python-dotenv
 requests

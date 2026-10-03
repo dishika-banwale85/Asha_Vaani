@@ -15,7 +15,6 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_groq import ChatGroq
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from dotenv import load_dotenv
 import requests
@@ -788,7 +787,11 @@ def rerank_results(query, results, top_k=5):
     return results[:top_k]
 
 
-primary_llm = ChatGroq(model_name="openai/gpt-oss-20b", temperature=0.3)
+primary_llm = ChatGroq(
+    model_name="openai/gpt-oss-20b",
+    temperature=0.3,
+    model_kwargs={"tool_choice": "none"}
+)
 backup_llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0.3)
 robust_llm = primary_llm.with_fallbacks([backup_llm])
    #-------------used for offline Puspose-----------------
@@ -885,10 +888,65 @@ def understand_query_for_retrieval(user_msg: str) -> str:
     return enhanced.strip()   
 
 #local_llm = ChatOllama(model="gemma2:2b", temperature=0.3)
+def is_follow_up_question(user_msg: str) -> bool:
+    q = user_msg.lower().strip()
+    if re.search(
+        r"\b(emergency|urgent|unconscious|seizure|convulsion|overdose|"
+        r"can't breathe|cannot breathe|difficulty breathing|severe bleeding)\b",
+        q,
+    ):
+        return False
+    follow_up_patterns = (
+        r"\b(it|its|they|them|their|there|same|above)\b",
+        r"\b(the patient|that patient|the case|this case)\b",
+        r"\btell me more\b",
+        r"\bwhat about (it|its|them|that|this|those|these)\b",
+        r"\bhow about (it|its|them|that|this|those|these)\b",
+        r"\b(how|what|why|where|when)\s+(does|do|is|are|can|will)\s+(this|that|these|those)\b",
+        r"\b(in that case|for this case|and then|then what|what next)\b",
+    )
+    return any(re.search(pattern, q) for pattern in follow_up_patterns)
+
+
+def prior_follow_up_history(user_msg: str, history: list) -> list:
+    if not is_follow_up_question(user_msg):
+        return []
+
+    prior = list(history or [])
+    if (
+        prior
+        and prior[-1].get("sender") == "user"
+        and prior[-1].get("text", "").strip() == user_msg.strip()
+    ):
+        prior.pop()
+
+    bot_index = next(
+        (i for i in range(len(prior) - 1, -1, -1) if prior[i].get("sender") == "bot"),
+        None,
+    )
+    if bot_index is None:
+        return []
+
+    user_index = next(
+        (i for i in range(bot_index - 1, -1, -1) if prior[i].get("sender") == "user"),
+        None,
+    )
+    if user_index is None:
+        return [prior[bot_index]]
+    return prior[user_index:bot_index + 1]
+
+
 def build_retrieval_query(user_msg: str, history: list) -> str:
-    if len(user_msg.strip().split()) <= 4 and history:
-        last_bot_msg = next((m["text"] for m in reversed(history) if m["sender"] == "bot"), "")
-        return f"{last_bot_msg} {user_msg}"
+    if not is_follow_up_question(user_msg):
+        return user_msg
+
+    prior = prior_follow_up_history(user_msg, history)
+    prior_question = next(
+        (m.get("text", "") for m in reversed(prior) if m.get("sender") == "user"),
+        "",
+    )
+    if prior_question:
+        return f"{prior_question} {user_msg}"
     return user_msg
 
 from fastapi import File, UploadFile, Form
@@ -969,11 +1027,13 @@ async def chat_with_rag(
     file_type = parsed["file_type"]
     user_msg = message
     
-    # Parse history from JSON string
-    try:
-        chat_history_parsed = json.loads(history)
-    except:
-        chat_history_parsed = []
+    # parse_chat_request already returns history as a list.
+    chat_history_parsed = [
+        item for item in history
+        if isinstance(item, dict)
+        and item.get("sender") in ("user", "bot")
+        and isinstance(item.get("text"), str)
+    ] if isinstance(history, list) else []
 
     # Consent check
     conn = sqlite3.connect("users.db")
@@ -1030,17 +1090,13 @@ async def chat_with_rag(
         context_parts = []
 
         for item in retrieval_results:
-            source_path = item["metadata"].get(
-                "source",
-                "Unknown_PDF.pdf"
+            source_path = item.get("metadata", {}).get("source")
+            source_label = (
+                f"[SOURCE FILE: {os.path.basename(source_path)}]\n"
+                if isinstance(source_path, str) and source_path.strip()
+                else ""
             )
-
-            actual_filename = os.path.basename(source_path)
-
-            context_parts.append(
-                f"[SOURCE FILE: {actual_filename}]\n"
-                f"{item['document']}\n"
-            )
+            context_parts.append(f"{source_label}{item['document']}\n")
 
         retrieved_context = "\n\n".join(context_parts)
         # -----------------------------------
@@ -1545,13 +1601,53 @@ You must NOT:
 - Do not sound like a textbook or research paper.
 - Speak like a helpful ASHA-support assistant.
 
+==================================================
+16. CURRENT QUESTION, GENERAL ANSWERS, EMERGENCIES, AND TOOLS
+==================================================
+
+These rules take precedence over any conflicting fallback instruction above.
+
+- Never call, request, or claim to use a tool, browser, repository search,
+  web search, or external service. No tools are available to you.
+- A new independent user question is the task to answer. Do not let older
+  conversation turns override it. Retrieved context below was freshly
+  retrieved for the current question (or its resolved follow-up).
+- For a guideline or policy question, use retrieved passages only when they
+  actually support the answer. Cite only exact filenames shown in [SOURCE FILE]
+  labels. If no supporting passage or filename is present, do not claim a PDF
+  source or invent one.
+- If a healthcare, medical, or ASHA question is not answered by the retrieved
+  passages, provide a concise general AI-generated answer only when it is safe
+  and useful. Label it: "General AI-generated information; not taken directly
+  from the project guidelines." Never guess official incentives, eligibility,
+  policy, exact procedures, or medication doses. If those exact details are
+  unavailable, say they are not specified in the retrieved project material.
+- For ordinary, non-medical questions that do not need project guidelines,
+  answer normally. Do not use the guideline-insufficient response for them.
+- For an emergency or possible severe danger, immediately advise seeking
+  urgent medical care at the nearest hospital, PHC, or appropriate emergency
+  facility. Do not delay that advice for retrieval. Do not invent treatment or
+  dosages; label any additional general medical guidance as AI-generated.
+- For a follow-up, use only the relevant preceding exchange to understand its
+  reference, and answer the current follow-up using the newly retrieved
+  context. Do not reuse an earlier answer as the answer to the new question.
+
+==================================================
+17. RESPONSE CITATION AND STYLE
+==================================================
+
+If retrieved passages support the answer, include the exact source filename
+shown with the supporting passage. Never cite a source that is absent from the
+retrieved context. Keep answers direct, concise, and in the user's language.
+
 {retrieved_context}
 """
         # 1. Start with the System Prompt
         messages = [SystemMessage(content=system_prompt)]
         
-        # 2. Add the past conversational history
-        for past_msg in chat_history_parsed:
+        # Include prior turns only when the current message is a follow-up.
+        relevant_history = prior_follow_up_history(user_msg, chat_history_parsed)
+        for past_msg in relevant_history:
             if past_msg["sender"] == "user":
                 messages.append(HumanMessage(content=past_msg["text"]))
             elif past_msg["sender"] == "bot":
